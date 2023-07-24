@@ -1,0 +1,21 @@
+{
+  "name": "questionnaire",
+  "version": "1.0.0",
+  "description": "questionnaire bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js"
+  },
+  "author": "doniverse",
+  "license": "ISC",
+  "dependencies": {
+    "@grammyjs/conversations": "^1.1.2",
+    "firebase": "^10.0.0",
+    "grammy": "^1.17.2",
+    "moment": "^2.29.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
