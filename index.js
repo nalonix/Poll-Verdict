@@ -9,10 +9,10 @@ const moment = require('moment');
 //utils
 const {storePoll, verifyPoll, denyPoll, preparePost, userAuth, updateUserPolls,getUserPolls} = require('./utils.js')
 // Create an instance of the `Bot` class and pass your bot token to it.
-const bot = new Bot("6344884543:AAEXjrKwfx8suRqlNa7u9h2TVpukxLI21tw"); // <-- put your bot token between the ""
+const bot = new Bot(""); // <-- put your bot token between the ""
 
 //Settings
-const {adminID} = require("./botSettings");
+const {adminID, channelID, botID} = require("./botSettings");
 let aPoll = {
     scenario: "",
     quest: " ",
@@ -150,9 +150,9 @@ async function setTimmer(){
     toPost = await preparePost();
     toPost.forEach(async (ele,i)=>{
       if(ele.scenario.length > 0) {
-        await bot.api.sendMessage("@whatoodo", ele.scenario)
+        await bot.api.sendMessage(channelID, ele.scenario)
       }
-      let poll = await bot.api.sendPoll("@whatoodo",ele.quest,ele.options);
+      let poll = await bot.api.sendPoll(channelID,ele.quest,ele.options);
       await updateUserPolls(poll.message_id, ele.quest, ele.creator_id);
     })
   }, 6000*60*2);
