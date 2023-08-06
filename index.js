@@ -11,6 +11,8 @@ const {storePoll, verifyPoll, denyPoll, preparePost, userAuth, updateUserPolls,g
 // Create an instance of the `Bot` class and pass your bot token to it.
 const bot = new Bot("6344884543:AAEXjrKwfx8suRqlNa7u9h2TVpukxLI21tw"); // <-- put your bot token between the ""
 
+//Settings
+const {adminID} = require("./botSettings");
 let aPoll = {
     scenario: "",
     quest: " ",
@@ -120,7 +122,7 @@ async function singlePoll(conversation, ctx) {
 async function sendToAdmin(docId){
 
   if(aPoll.scenario.length > 0) {
-    scenarioId = await bot.api.sendMessage(604247733, `${aPoll.scenario} \n`);
+    scenarioId = await bot.api.sendMessage(adminID, `${aPoll.scenario} \n`);
     scenarioId = scenarioId.message_id;
   }
 
@@ -131,7 +133,7 @@ async function sendToAdmin(docId){
   let options = "";
   aPoll.options.forEach((ele, i)=> options+=`${i+1}. `+ele+`\n`);
 
-    await bot.api.sendMessage(604247733,`${aPoll.quest} \n${options}`,{reply_markup: adminVerifyKeyboard});
+    await bot.api.sendMessage(adminID,`${aPoll.quest} \n${options}`,{reply_markup: adminVerifyKeyboard});
 }
 
 bot.use(createConversation(singlePoll));
@@ -186,7 +188,7 @@ async function myaccountResponse(ctx){
 // Handle the /start command.
 bot.command("start", async(ctx) => {
   ctx.replyWithChatAction("typing")
-  if(!runningFlag && ctx.chat.id == 604247733){
+  if(!runningFlag && ctx.chat.id == adminID){
     setTimmer();
     ctx.reply("Timer set! ⌚");
   }
@@ -230,7 +232,7 @@ bot.command("cancel", async (ctx) => {
 
 bot.callbackQuery('Continue_userverify', async (ctx)=>{
   // if(scenarioId !== 0){
-  //   await bot.api.deleteMessage(604247733, scenarioId);
+  //   await bot.api.deleteMessage(adminID, scenarioId);
   //   scenarioId = 0;
   // }
   ctx.deleteMessage();
@@ -241,7 +243,7 @@ bot.callbackQuery('Continue_userverify', async (ctx)=>{
 
 bot.callbackQuery('Cancel_userverify', async (ctx)=>{
   // if(scenarioId !== 0){
-  //   await bot.api.deleteMessage(604247733, scenarioId);
+  //   await bot.api.deleteMessage(adminID, scenarioId);
   //   scenarioId = 0;
   // }
   ctx.deleteMessage();
@@ -269,7 +271,7 @@ bot.on("callback_query:data", async (ctx) => {
   const str = ctx.callbackQuery.data;
   const arr = str.split(",");
   if(scenarioId !== 0){
-    await bot.api.deleteMessage(604247733, scenarioId);
+    await bot.api.deleteMessage(adminID, scenarioId);
     scenarioId = 0;
   }
   if(arr[0].trim() === 'adminverify'){
