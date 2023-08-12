@@ -37,7 +37,7 @@ bot.use(conversations());
 
 // Error handler
 bot.catch((err, ctx) => {
-  console.error('Error occurred:', err);
+  console.error('Error occurred:', err); 
 });
 
 async function singlePoll(conversation, ctx) {
@@ -118,16 +118,15 @@ async function singlePoll(conversation, ctx) {
   }
   ctx.reply(`${aPoll.quest} \n${options}`,{reply_markup: userVerifyKeyboard})
 }
-
+bot.use(createConversation(singlePoll));
 async function sendToAdmin(docId){
 
   if(aPoll.scenario.length > 0) {
     scenarioId = await bot.api.sendMessage(adminID, `${aPoll.scenario} \n`);
     scenarioId = scenarioId.message_id;
   }
-
   let adminVerifyKeyboard = new InlineKeyboard()
-  .text("Verify",`adminverify,${docId}`).row()
+  .text("Verify",`adminverify,${docId}`)
   .text("Cancel",`admindeny,${docId}`);
   //send to user
   let options = "";
@@ -136,7 +135,7 @@ async function sendToAdmin(docId){
     await bot.api.sendMessage(adminID,`${aPoll.quest} \n${options}`,{reply_markup: adminVerifyKeyboard});
 }
 
-bot.use(createConversation(singlePoll));
+
 
 
 
@@ -148,20 +147,21 @@ async function setTimmer(){
   runningFlag = true;
   setInterval(async ()=>{
     toPost = await preparePost();
-    toPost.forEach(async (ele,i)=>{
-      if(ele.scenario.length > 0) {
-        await bot.api.sendMessage(channelID, ele.scenario)
+
+    for(let post of toPost){
+      if(post.scenario.length > 0) {
+        await bot.api.sendMessage(channelID, post.scenario)
       }
-      let poll = await bot.api.sendPoll(channelID,ele.quest,ele.options);
-      await updateUserPolls(poll.message_id, ele.quest, ele.creator_id);
-    })
-  }, 6000*60*2);
+      let poll = await bot.api.sendPoll(channelID,post.quest,post.options);
+      await updateUserPolls(poll.message_id, post.quest, post.creator_id);
+    }
+  }, 1000*60); //6000*60*2
 }
 
 async function createPollResponse(ctx){
   if(ctx.callbackQuery)
     ctx.deleteMessage();
-  ctx.reply("Creating a poll: 🟢");
+  await ctx.reply("Creating a poll: 🟢");
   try {
     let keyboard = new Keyboard()
         .text("single poll").row()
@@ -193,28 +193,50 @@ bot.command("start", async(ctx) => {
     ctx.reply("Timer set! ⌚");
   }
   let user_name = await userAuth(ctx.message.from);
-  await ctx.reply(`Welcome! ${user_name}. 👍`,{reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
+  await ctx.reply(`Welcome! ${user_name} to What To Do Bot`,{reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
 });
+
+
+
 bot.callbackQuery("createpoll",async ctx=>{
-  await createPollResponse(ctx);
+  await ctx.deleteMessage();
+  await ctx.reply("Pick type: ", {reply_markup: {inline_keyboard: [
+        [{text:"Single poll", callback_data:"createsinglepoll"},
+          {text:"Chained polls", callback_data:"createchainedpolls"}]
+      ]}});
+  //await createPollResponse(ctx);
 })
 // handle poll
 bot.command("createpoll", async (ctx) => {
-  await createPollResponse(ctx);
-});
-bot.hears('single poll', async (ctx)=>{
-  await ctx.reply(`Single poll selected`, {
-    reply_markup: { remove_keyboard: true },
-  });
-  // delete previous keyoard
-  // await ctx.deleteMessage();
-  await ctx.conversation.enter("singlePoll");
-});
+  await ctx.reply("Pick type: ", {reply_markup: {inline_keyboard: [
+        [{text:"Single poll", callback_data:"createsinglepoll"},
+        {text:"Chained polls", callback_data:"createchainedpolls"}]
+      ]}});
 
-bot.hears('multiple poll', async (ctx)=>{
-  //delete previous keyoard
-  await ctx.answerCallbackQuery({text:"Feature coming soon ⌛"})
 });
+bot.callbackQuery("createsinglepoll", async ctx=>{
+  //await createPollResponse(ctx);
+  await ctx.deleteMessage();
+  await ctx.conversation.enter("singlePoll");
+})
+
+bot.callbackQuery("createchainedpolls", async ctx=>{
+  //await createPollResponse(ctx);
+  await ctx.conversation.enter("multiplePoll")
+})
+// bot.hears('single poll', async (ctx)=>{
+//   await ctx.reply(`Single poll selected`, {
+//     reply_markup: { remove_keyboard: true },
+//   });
+//   // delete previous keyoard
+//   // await ctx.deleteMessage();
+//   await ctx.conversation.enter("singlePoll");
+// });
+//
+// bot.hears('multiple poll', async (ctx)=>{
+//   //delete previous keyoard
+//   await ctx.answerCallbackQuery({text:"Feature coming soon ⌛"})
+// });
 
 bot.command("account",async (ctx)=>{
   await myaccountResponse(ctx)
@@ -233,12 +255,12 @@ bot.command("cancel", async (ctx) => {
 bot.callbackQuery('Continue_userverify', async (ctx)=>{
   // if(scenarioId !== 0){
   //   await bot.api.deleteMessage(adminID, scenarioId);
-  //   scenarioId = 0;
+  //   scenarioId = 0; creator_id
   // }
   ctx.deleteMessage();
   const docId = await storePoll(aPoll);
   sendToAdmin(docId);
-  await ctx.answerCallbackQuery({text:"Sent for verfication"})
+  await ctx.answerCallbackQuery({text:"Sent for validation"})
 });
 
 bot.callbackQuery('Cancel_userverify', async (ctx)=>{
@@ -275,14 +297,20 @@ bot.on("callback_query:data", async (ctx) => {
     scenarioId = 0;
   }
   if(arr[0].trim() === 'adminverify'){
-    await verifyPoll(arr[1].trim())
+    let {status, creator_id} = await verifyPoll(arr[1].trim());
     await ctx.deleteMessage();
+    if(status === "success"){
+      await ctx.api.sendMessage(creator_id, "Poll Accepted");
+    }
   }else if(arr[0].trim()=== 'admindeny'){
-    await denyPoll(arr[1].trim())
+    let { status, creator_id } = await denyPoll(arr[1].trim())
     await ctx.deleteMessage();
+    if(status === "success"){
+      await ctx.api.sendMessage(creator_id, "Poll Denied");
+    }
   }
   //⭐
-  await ctx.answerCallbackQuery({text:""}); // remove loading animation
+  await ctx.answerCallbackQuery(); // remove loading animation
 });
 
 // Handle other messages.

@@ -1,5 +1,5 @@
-const adminID = 604247733
+const adminID =
 const botID = ""
-const channelID = "@whatoodo"
+const channelID = ""
 
 module.exports = {adminID, botID, channelID}

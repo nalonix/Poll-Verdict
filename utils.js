@@ -4,15 +4,14 @@ const {app, db} = require('./firebase.js')
 //firebase functions 
 const {collection,query, doc ,getDoc, getDocs,addDoc, setDoc, updateDoc, deleteDoc, orderBy, limit} = require("firebase/firestore");
 
-const all_polls_ref = collection(db, 'all_polls');
-const queue_ref = collection(db, 'queue');
+const test_all_polls_ref = collection(db, 'test_all_polls');
+const test_queue_ref = collection(db, 'test_queue');
 const user_ref = collection(db, 'user');
 
 async function storePoll(aPoll){   
     try {
-        let docRef = await addDoc(all_polls_ref,aPoll);
-        let docId = await docRef.id;
-        return docId;
+        let docRef = await addDoc(test_all_polls_ref,aPoll);
+        return await docRef.id;
       } catch (error) {
         // Handle the error
         console.error('Error:', error);
@@ -23,36 +22,42 @@ async function storePoll(aPoll){
     //get full poll data with document ID
 
     try {
-        const documentRef = await doc(db, "all_polls", docId);
+        const documentRef = await doc(db, "test_all_polls", docId);
         const documentSnapshot = await getDoc(documentRef);
         if (documentSnapshot.exists()) {
           //grab from all polls
           const documentData = documentSnapshot.data();
           console.log("Document data:", documentData);
-          //write to queue
-          await addDoc(queue_ref,documentData);
+          //write to test_queue
+          await addDoc(test_queue_ref,documentData);
           //delete from all polls
           await deleteDoc(documentRef)
+          return {status: "success", creator_id: documentSnapshot.data().creator_id}
         } else {
           console.log("Document not found");
+            return {status: "fail", creator_id: ""}
         }
       } catch (error) {
         console.error("Error getting document:", error);
+        return {status: "fail", creator_id: ""}
       }
   }
 
   async function denyPoll(docId){
     try {
-      const documentRef = await doc(db, "all_polls", docId);
+      const documentRef = await doc(db, "test_all_polls", docId);
       const documentSnapshot = await getDoc(documentRef);
       if (documentSnapshot.exists()) {
         //delete from all polls
         await deleteDoc(documentRef)
+        return {status: "success", creator_id: documentSnapshot.data().creator_id}
       } else {
         console.log("Document not found");
+        return {status: "fail", creator_id: ""}
       }
     } catch (error) {
       console.error("Error getting document:", error);
+      return {status: "fail", creator_id: ""}
     }
   }
 
@@ -60,15 +65,15 @@ async function storePoll(aPoll){
       try {
         let to_post = [];
         // Query the collection, order by the created_at field in ascending order, and limit to 10 documents
-        const q = query(queue_ref, orderBy("created_at", "asc"), limit(2));
+        const q = query(test_queue_ref, orderBy("created_at", "asc"), limit(2));
         const querySnapshot = await getDocs(q);
         // Iterate over the documents and log their data
         querySnapshot.forEach(async (aDoc) => {
           // add to the array the returns the fetched values
           to_post.push(aDoc.data());
-          //delete from queue ⚠
-           const documentRef = await doc(db, "queue", aDoc.id);
-            //delete from queue
+          //delete from test_queue ⚠
+           const documentRef = await doc(db, "test_queue", aDoc.id);
+            //delete from test_queue
            await deleteDoc(documentRef)
         });
         return to_post;
