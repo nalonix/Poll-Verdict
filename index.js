@@ -9,7 +9,7 @@ const moment = require('moment');
 //utils
 const {storePoll, verifyPoll, denyPoll, preparePost, userAuth, updateUserPolls,getUserPolls} = require('./utils.js')
 // Create an instance of the `Bot` class and pass your bot token to it.
-const bot = new Bot(""); // <-- put your bot token between the ""
+const bot = new Bot("6539896023:AAG-0vOFSeJxmCU526JZOvxrSK_TFR7tdYo"); // <-- put your bot token between the ""
 
 //Settings
 const {adminID, channelID, botID} = require("./botSettings");
@@ -42,12 +42,15 @@ bot.catch((err, ctx) => {
 
 async function singlePoll(conversation, ctx) {
   aPoll = {
+    type: "single",
     scenario: "",
     quest: " ",
     options: [],
     creator_id: "",
     created_at: moment().format('YYYY-MM-DD HH:mm')
   };
+  // store creator id
+  aPoll.creator_id = ctx.chat.id;
 
   // keyboard to select - with and without scenario
   let keyboard = new Keyboard()
@@ -55,11 +58,14 @@ async function singlePoll(conversation, ctx) {
   .text("No Scenario").row().placeholder("Pick one: ").oneTime().resized();
 
   await ctx.reply("Pick preference: ",{reply_markup: keyboard});
-  const type = await conversation.waitFor(":text");
-  aPoll.creator_id = ctx.chat.id;
+  let type = await conversation.waitFor(":text");
 
-  //Acccpeint scenatio if wanted
-  if(type.msg.text == "With Scenario"){
+  while(type.msg.text !== "With Scenario" && type.msg.text !== "No Scenario"){
+    await ctx.reply("Only choose from the given options.\nPick preference: ",{reply_markup: keyboard});
+    type = await conversation.waitFor(":text");
+  }
+  //Accept scenario if wanted
+  if(type.msg.text === "With Scenario"){
       await ctx.reply(`Send the Scenario: 710 chracters max `, {
         reply_markup: { remove_keyboard: true },
       });
@@ -74,11 +80,7 @@ async function singlePoll(conversation, ctx) {
       }
       // if all goes well save scenario
       aPoll.scenario = scenario.msg.text;
-  }else if(type.msg.text != "No Scenario"){
-    ctx.reply(`Invalid Input! One pick from the button. \n Operatoin terminated!`)  
-    return;
   }
-
   //Accepting quest
   await ctx.reply("Send the question: 255 Characters max", {
     reply_markup: { remove_keyboard: true },
@@ -95,9 +97,9 @@ async function singlePoll(conversation, ctx) {
   aPoll.quest = quest.msg.text;
 
   for (let i = 0; i < 7; i++) {
-    await ctx.reply(`Send me option ${i+1} - Max 7 \n or /done if u're done`);
+    await ctx.reply(`Send option ${i+1} - Max 7 \n or /done if you are done`);
     const anOption = await conversation.waitFor(":text");
-    if(anOption.msg.text == "/done")
+    if(anOption.msg.text === "/done")
         break; 
     else
       aPoll.options.push(anOption.msg.text);
@@ -107,38 +109,70 @@ async function singlePoll(conversation, ctx) {
   let options = "";
   aPoll.options.forEach((ele, i)=> options+=`${i+1}. `+ele+`\n`);
 
-  // keyboard to select - proceed or cancel
-  let userVerifyKeyboard = new InlineKeyboard()
-  .text("Continue","Continue_userverify")
-  .text("Cancel","Cancel_userverify");
 
+  let scenarioId = 0;
   if(aPoll.scenario.length > 0) {
-    scenarioId = await ctx.reply(`${aPoll.scenario} \n`);
+    scenarioId = await ctx.reply(`${aPoll.scenario}`);
     scenarioId = scenarioId.message_id;
   }
-  ctx.reply(`${aPoll.quest} \n${options}`,{reply_markup: userVerifyKeyboard})
+  await ctx.reply(`${aPoll.quest} \n${options}`,{
+    reply_markup: {
+    keyboard: [
+        [{text:"Continue"}],
+        [{text:"Cancel"}]
+    ],
+    resize_keyboard:true
+    }
+  })
+  let verification = await conversation.waitFor(":text");
+  while(verification.msg.text !== "Continue" && verification.msg.text !== "Cancel"){
+    await ctx.reply("Only pick from the given options.", {
+      reply_markup: {
+        keyboard: [
+          [{text:"Continue"}],
+          [{text:"Cancel"}]
+        ],
+        resize_keyboard:true
+      }
+    })
+    verification = await conversation.waitFor(":text");
+  }
+  let loadingMessage = await ctx.reply("Loading...",{reply_markup:{remove_keyboard:true}})
+  if(verification.msg.text === "Continue"){
+    const docId = await storePoll(aPoll);
+    await sendToAdmin(docId);
+    try {
+      await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);
+    } catch (e) {
+      console.log(e);
+    }
+    await ctx.reply("Sent to admin for validation.");
+  }else{
+    try {
+      await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);
+    } catch (e) {
+      console.log(e);
+    }
+    await ctx.reply("Poll creation canceled.")
+    await ctx.conversation.exit();
+  }
 }
 bot.use(createConversation(singlePoll));
-async function sendToAdmin(docId){
 
-  if(aPoll.scenario.length > 0) {
-    scenarioId = await bot.api.sendMessage(adminID, `${aPoll.scenario} \n`);
-    scenarioId = scenarioId.message_id;
-  }
+
+async function chainedpoll(conversation, ctx){
+
+}
+bot.use(createConversation(chainedpoll));
+async function sendToAdmin(docId){
   let adminVerifyKeyboard = new InlineKeyboard()
   .text("Verify",`adminverify,${docId}`)
   .text("Cancel",`admindeny,${docId}`);
   //send to user
   let options = "";
-  aPoll.options.forEach((ele, i)=> options+=`${i+1}. `+ele+`\n`);
-
-    await bot.api.sendMessage(adminID,`${aPoll.quest} \n${options}`,{reply_markup: adminVerifyKeyboard});
+  aPoll.options.forEach((ele, i)=> options+=`<b>${i+1}.</b> `+ele+`\n`);
+  await bot.api.sendMessage(adminID,`${aPoll.scenario}\n\n<em>${aPoll.quest}</em> \n${options}`,{reply_markup: adminVerifyKeyboard, parse_mode:"HTML"});
 }
-
-
-
-
-
 // You can now register listeners on your bot object `bot`.
 // grammY will call the listeners when users send messages to your bot.
 
@@ -158,23 +192,23 @@ async function setTimmer(){
   }, 1000*60); //6000*60*2
 }
 
-async function createPollResponse(ctx){
-  if(ctx.callbackQuery)
-    ctx.deleteMessage();
-  await ctx.reply("Creating a poll: 🟢");
-  try {
-    let keyboard = new Keyboard()
-        .text("single poll").row()
-        .text("multiple polls").row().placeholder("Pick one: ").oneTime().resized();
-    await ctx.reply("Pick from options: ",{reply_markup: keyboard});
-  } catch (error) {
-    console.log(error)
-  }
-}
+// async function createPollResponse(ctx){
+//   if(ctx.callbackQuery)
+//     ctx.deleteMessage();
+//   await ctx.reply("Creating a poll: 🟢");
+//   try {
+//     let keyboard = new Keyboard()
+//         .text("single poll").row()
+//         .text("multiple polls").row().placeholder("Pick one: ").oneTime().resized();
+//     await ctx.reply("Pick from options: ",{reply_markup: keyboard});
+//   } catch (error) {
+//     console.log(error)
+//   }
+// }
 async function myaccountResponse(ctx){
   if(ctx.callbackQuery)
     ctx.deleteMessage();
-  bot.api.sendMessage(ctx.chat.id, "User info",{
+  await ctx.api.sendMessage(ctx.chat.id, "User info",{
     reply_markup: {
       inline_keyboard: [
         [
@@ -187,14 +221,17 @@ async function myaccountResponse(ctx){
 
 // Handle the /start command.
 bot.command("start", async(ctx) => {
-  ctx.replyWithChatAction("typing")
-  if(!runningFlag && ctx.chat.id == adminID){
-    setTimmer();
-    ctx.reply("Timer set! ⌚");
+  await ctx.replyWithChatAction("typing")
+  if(!runningFlag && ctx.chat.id === adminID){
+    await setTimmer();
+    await ctx.reply("Timer set! ⌚");
   }
-  let user_name = await userAuth(ctx.message.from);
-  await ctx.reply(`Welcome! ${user_name} to What To Do Bot`,{reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
-});
+  await ctx.reply(`Hello ${ctx.chat.first_name}, Welcome to <b>What To Do</b> Bot!`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
+})
+
+bot.command("menu",async (ctx)=>{
+  await ctx.reply(`Here's the menu, what would you like to do?`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
+})
 
 
 
@@ -222,7 +259,7 @@ bot.callbackQuery("createsinglepoll", async ctx=>{
 
 bot.callbackQuery("createchainedpolls", async ctx=>{
   //await createPollResponse(ctx);
-  await ctx.conversation.enter("multiplePoll")
+  await ctx.conversation.enter("chainedpoll")
 })
 // bot.hears('single poll', async (ctx)=>{
 //   await ctx.reply(`Single poll selected`, {
@@ -252,26 +289,6 @@ bot.command("cancel", async (ctx) => {
 
 
 
-bot.callbackQuery('Continue_userverify', async (ctx)=>{
-  // if(scenarioId !== 0){
-  //   await bot.api.deleteMessage(adminID, scenarioId);
-  //   scenarioId = 0; creator_id
-  // }
-  ctx.deleteMessage();
-  const docId = await storePoll(aPoll);
-  sendToAdmin(docId);
-  await ctx.answerCallbackQuery({text:"Sent for validation"})
-});
-
-bot.callbackQuery('Cancel_userverify', async (ctx)=>{
-  // if(scenarioId !== 0){
-  //   await bot.api.deleteMessage(adminID, scenarioId);
-  //   scenarioId = 0;
-  // }
-  ctx.deleteMessage();
-  await ctx.conversation.exit();
-  await ctx.answerCallbackQuery({text:"Operation canceled"});
-});
 
 bot.callbackQuery('mypolls',async ctx=>{
   ctx.deleteMessage();
