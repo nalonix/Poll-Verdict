@@ -13,12 +13,17 @@ const bot = new Bot("6539896023:AAG-0vOFSeJxmCU526JZOvxrSK_TFR7tdYo"); // <-- pu
 
 //Settings
 const {adminID, channelID, botID} = require("./botSettings");
-let aPoll = {
-    scenario: "",
-    quest: " ",
-    options: [],
+let pollTemplate = {
+    type:"",
     creator_id: "",
-    created_at: ""
+    created_at: "",
+    scenario: "",
+    poll_data:[
+      {
+        quest: " ",
+        options: []
+      }
+    ],
   };
 
 let scenarioId = 0;
@@ -41,16 +46,18 @@ bot.catch((err, ctx) => {
 });
 
 async function singlePoll(conversation, ctx) {
-  aPoll = {
-    type: "single",
+  pollTemplate ={
+    type:"single",
+    creator_id: ctx.chat.id,
+    created_at: moment().format('YYYY-MM-DD HH:mm'),
     scenario: "",
-    quest: " ",
-    options: [],
-    creator_id: "",
-    created_at: moment().format('YYYY-MM-DD HH:mm')
+    poll_data:[
+    {
+      quest: " ",
+      options: []
+    }
+  ],
   };
-  // store creator id
-  aPoll.creator_id = ctx.chat.id;
 
   // keyboard to select - with and without scenario
   let keyboard = new Keyboard()
@@ -66,7 +73,7 @@ async function singlePoll(conversation, ctx) {
   }
   //Accept scenario if wanted
   if(type.msg.text === "With Scenario"){
-      await ctx.reply(`Send the Scenario: 710 chracters max `, {
+      await ctx.reply(`Send the Scenario: 710 characters max `, {
         reply_markup: { remove_keyboard: true },
       });
       let scenario = await conversation.waitFor(":text");
@@ -74,12 +81,12 @@ async function singlePoll(conversation, ctx) {
 
       while (scenarioLength > 710) {
         scenarioLength = scenario.msg.text.trim().length;
-        await ctx.reply(`710 charcters max - Current ${scenarioLength} `);
+        await ctx.reply(`710 characters max - Current ${scenarioLength} `);
         scenario = await conversation.waitFor(":text");
         scenarioLength = scenario.msg.text.trim().length;
       }
       // if all goes well save scenario
-      aPoll.scenario = scenario.msg.text;
+      pollTemplate.scenario = scenario.msg.text;
   }
   //Accepting quest
   await ctx.reply("Send the question: 255 Characters max", {
@@ -89,33 +96,41 @@ async function singlePoll(conversation, ctx) {
   let questLength = quest.msg.text.trim().length;
   while (quest.msg.text.trim().length > 255) {
     questLength = quest.msg.text.trim().length;
-    await ctx.reply(`710 charcters max - Current ${questLength} `);
+    await ctx.reply(`710 characters max - Current ${questLength} `);
     quest = await conversation.waitFor(":text");
     questLength = quest.msg.text.trim().length;
   }
   // if all goes well save quest
-  aPoll.quest = quest.msg.text;
+  pollTemplate.poll_data[0].quest = quest.msg.text;
 
   for (let i = 0; i < 7; i++) {
     await ctx.reply(`Send option ${i+1} - Max 7 \n or /done if you are done`);
-    const anOption = await conversation.waitFor(":text");
-    if(anOption.msg.text === "/done")
-        break; 
-    else
-      aPoll.options.push(anOption.msg.text);
+    let anOption = await conversation.waitFor(":text");
+    while(anOption.msg.text.trim().length > 100){
+      await ctx.reply(`Send option ${i+1} - 100 characters max \n or /done if you are done`);
+      anOption = await conversation.waitFor(":text");
+    }
+    if(anOption.msg.text === "/done") {
+      if(pollTemplate.poll_data[0].options.length >= 2)
+        break;
+      else {
+        await ctx.reply("At least 2 options required");
+        i--;
+      }
+    }
+    else {
+      pollTemplate.poll_data[0].options.push(anOption.msg.text);
+    }
   }
 
   //send to user
   let options = "";
-  aPoll.options.forEach((ele, i)=> options+=`${i+1}. `+ele+`\n`);
+  pollTemplate.poll_data[0].options.forEach((ele, i)=> options+=`${i+1}. `+ele+`\n`);
 
-
-  let scenarioId = 0;
-  if(aPoll.scenario.length > 0) {
-    scenarioId = await ctx.reply(`${aPoll.scenario}`);
-    scenarioId = scenarioId.message_id;
+  if(pollTemplate.scenario.length > 0) {
+    await ctx.reply(`${pollTemplate.scenario}`);
   }
-  await ctx.reply(`${aPoll.quest} \n${options}`,{
+  await ctx.reply(`${pollTemplate.poll_data[0].quest} \n${options}`,{
     reply_markup: {
     keyboard: [
         [{text:"Continue"}],
@@ -139,8 +154,8 @@ async function singlePoll(conversation, ctx) {
   }
   let loadingMessage = await ctx.reply("Loading...",{reply_markup:{remove_keyboard:true}})
   if(verification.msg.text === "Continue"){
-    const docId = await storePoll(aPoll);
-    await sendToAdmin(docId);
+    const docId = await storePoll(pollTemplate);
+    await sendToAdmin(docId,ctx);
     try {
       await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);
     } catch (e) {
@@ -164,14 +179,20 @@ async function chainedpoll(conversation, ctx){
 
 }
 bot.use(createConversation(chainedpoll));
-async function sendToAdmin(docId){
+async function sendToAdmin(docId,ctx){
   let adminVerifyKeyboard = new InlineKeyboard()
   .text("Verify",`adminverify,${docId}`)
   .text("Cancel",`admindeny,${docId}`);
   //send to user
-  let options = "";
-  aPoll.options.forEach((ele, i)=> options+=`<b>${i+1}.</b> `+ele+`\n`);
-  await bot.api.sendMessage(adminID,`${aPoll.scenario}\n\n<em>${aPoll.quest}</em> \n${options}`,{reply_markup: adminVerifyKeyboard, parse_mode:"HTML"});
+  let polls = "";
+
+  pollTemplate.poll_data.forEach((ele, i)=>{
+    let aPoll = "";
+    aPoll+=`<em>${ele.quest}</em>\n`;
+    ele.options.forEach((ele, i)=> aPoll+=`<b>${i+1}.</b> `+ele+`\n`);
+    polls+=`\n${aPoll}`;
+  })
+  await ctx.api.sendMessage(adminID,`${pollTemplate.scenario}\n${polls}`,{reply_markup: adminVerifyKeyboard, parse_mode:"HTML"});
 }
 // You can now register listeners on your bot object `bot`.
 // grammY will call the listeners when users send messages to your bot.
