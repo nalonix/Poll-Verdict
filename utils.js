@@ -61,26 +61,33 @@ async function storePoll(aPoll){
     }
   }
 
-  async function preparePost() {
-      try {
-        let to_post = [];
-        // Query the collection, order by the created_at field in ascending order, and limit to 10 documents
-        const q = query(test_queue_ref, orderBy("created_at", "asc"), limit(2));
+
+
+
+
+
+async function preparePost() {
+    try {
+        const to_post = [];
+        // Query the collection, order by the created_at field in ascending order, and limit to 2 documents
+        const q = query(test_queue_ref, orderBy("created_at"), limit(3));
         const querySnapshot = await getDocs(q);
-        // Iterate over the documents and log their data
-        querySnapshot.forEach(async (aDoc) => {
-          // add to the array the returns the fetched values
-          to_post.push(aDoc.data());
-          //delete from test_queue ⚠
-           const documentRef = await doc(db, "test_queue", aDoc.id);
+
+        // Loop through the documents and push data to the array
+        querySnapshot.forEach(  (aDoc) => {
+            to_post.push(aDoc.data());
+            //delete from test_queue ⚠
+            const documentRef =  doc(test_queue_ref, `${aDoc.id}`);
             //delete from test_queue
-           await deleteDoc(documentRef)
+             deleteDoc(documentRef)
         });
         return to_post;
-      } catch (error) {
+    } catch (error) {
         console.error("Error retrieving documents:", error);
-      }
-  }
+        // Rethrow the error to handle it further if needed
+        throw error;
+    }
+}
 
   async function updateUserPolls(message_id, poll_name, creator_id){
     //search user's document by id
