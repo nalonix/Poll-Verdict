@@ -8,6 +8,8 @@ const moment = require('moment');
 
 //utils
 const {storePoll, verifyPoll, denyPoll, preparePost, userAuth, updateUserPolls,getUserPolls} = require('./utils.js')
+//
+const myPollsPagination = require("./myPollsPagination.js")
 // Create an instance of the `Bot` class and pass your bot token to it.
 const bot = new Bot("6539896023:AAG-0vOFSeJxmCU526JZOvxrSK_TFR7tdYo"); // <-- put your bot token between the ""
 
@@ -503,9 +505,9 @@ bot.command("cancel", async (ctx) => {
 
 
 bot.callbackQuery('mypolls',async ctx=>{
-  ctx.deleteMessage();
+  await ctx.deleteMessage();
   let all_my_polls = await getUserPolls(ctx.chat.id);
-
+  ctx.session.myPolls = all_my_polls;
   // keyboard to select - proceed or cancel
   let myPollsKeyboard = all_my_polls.map(ele=>{
     return [{text:ele.quest, url: `https://t.me/pixel_verse/${ele.message_id}`}]
@@ -516,6 +518,18 @@ bot.callbackQuery('mypolls',async ctx=>{
 
 })
 
+// Handle the "Next" button callback
+bot.callbackQuery('next', async (ctx) => {
+  try{
+    await ctx.deleteMessage()
+  }catch (e) {
+    console.log(e)
+  }
+  // Increment the current page number
+  ctx.session.currentPage += 1;
+  // Display the next page
+  await myPollsPagination(ctx);
+});
 
 //verification
 bot.on("callback_query:data", async (ctx) => {
