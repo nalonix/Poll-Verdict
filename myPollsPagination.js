@@ -1,14 +1,17 @@
 async function myPollsPagination(ctx) {
     await ctx.replyWithChatAction("typing");
+    await ctx.reply("..")
     const { currentPage,  myPolls} = ctx.session;
-    let itemsPerPage = 5
+    let itemsPerPage = 7
     const startIdx = currentPage * itemsPerPage;
     const endIdx = startIdx + itemsPerPage;
     const itemsToShow = myPolls.slice(startIdx, endIdx);
 
+
     // Send the items to the user
     for(let item of itemsToShow){
         //displaying replies
+
             await ctx.reply(item.quest, {
                 reply_markup:{
                     inline_keyboard: [
