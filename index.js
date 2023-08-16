@@ -35,9 +35,13 @@ bot.catch((err, ctx) => {
   console.error('Error occurred:', err); 
 });
 
+
+
 const createPoll = require("./conversations/createPollConvo")
 bot.use(createConversation(createPoll));
-
+// middleware to check if member of channel
+const checkMembership = require("./middlewares/checkMembership")
+bot.use(checkMembership);
 
 // You can now register listeners on your bot object `bot`.
 // grammY will call the listeners when users send messages to your bot.
@@ -72,6 +76,10 @@ bot.command("menu",async (ctx)=>{
   await ctx.reply(`Here's the menu, what would you like to do?`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
 })
 
+bot.callbackQuery("menu",async (ctx)=>{
+  await ctx.deleteMessage();
+  await ctx.reply(`Here's the menu, what would you like to do?`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
+})
 
 
 bot.callbackQuery("createpoll",async ctx=>{
@@ -123,6 +131,19 @@ bot.callbackQuery('next', async (ctx) => {
   }
   // Increment the current page number
   ctx.session.currentPage += 1;
+  // Display the next page
+  await myPollsPagination(ctx);
+});
+
+
+bot.callbackQuery('return', async (ctx) => {
+  try{
+    await ctx.deleteMessage()
+  }catch (e) {
+    console.log(e)
+  }
+  // Increment the current page number
+  ctx.session.currentPage -= 1;
   // Display the next page
   await myPollsPagination(ctx);
 });

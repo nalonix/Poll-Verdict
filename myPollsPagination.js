@@ -1,40 +1,54 @@
 async function myPollsPagination(ctx) {
     await ctx.replyWithChatAction("typing");
-    await ctx.reply("..")
     const { currentPage,  myPolls} = ctx.session;
     let itemsPerPage = 7
     const startIdx = currentPage * itemsPerPage;
     const endIdx = startIdx + itemsPerPage;
     const itemsToShow = myPolls.slice(startIdx, endIdx);
 
-
-    // Send the items to the user
-    for(let item of itemsToShow){
-        //displaying replies
-
-            await ctx.reply(item.quest, {
-                reply_markup:{
-                    inline_keyboard: [
-                        [
-                            {text:`${item.message_id}`, callback_data:`besufikad`},
-                        ]
-                    ]
-                },
-            });
-
+    let myPollsKeyboard = itemsToShow.map(ele=>{
+        return [{text:ele.quest, url: `https://t.me/pixel_verse/${ele.message_id}`}]
+    })
+    let navigationKeyboard = [];
+    if (currentPage > 0) {
+        // Add a "Return" button to fetch the previous page
+        navigationKeyboard.push({text: "◀️", callback_data: "return"});
     }
-
-    // Check if there are more items to show
     if (endIdx < myPolls.length) {
         // Add a "Next" button to fetch the next page
-        await ctx.reply('Click "Next" to see more items', {
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: "Next", callback_data: "next" }]
-                ]
-            }
-        });
+        navigationKeyboard.push({text:"️▶️", callback_data: "next"});
     }
+
+    myPollsKeyboard.push(navigationKeyboard);
+    myPollsKeyboard.push([{text:"Main Menu", callback_data:"menu"}])
+    await ctx.reply("Your polls", {reply_markup: { inline_keyboard: myPollsKeyboard, resize_keyboard: false }})
+
+    // Send the items to the user
+    // for(let item of itemsToShow){
+    //     //displaying replies
+    //         await ctx.reply(item.quest, {
+    //             reply_markup:{
+    //                 inline_keyboard: [
+    //                     [
+    //                         {text:`${item.message_id}`, callback_data:`besufikad`},
+    //                     ]
+    //                 ]
+    //             },
+    //         });
+    //
+    // }
+
+    // Check if there are more items to show
+    // if (endIdx < myPolls.length) {
+    //     // Add a "Next" button to fetch the next page
+    //     await ctx.reply('Click "Next" to see more items', {
+    //         reply_markup: {
+    //             inline_keyboard: [
+    //                 [{ text: "Next", callback_data: "next" }]
+    //             ]
+    //         }
+    //     });
+    // }
 }
 
 
