@@ -67,6 +67,7 @@ bot.command("start", async(ctx) => {
   await ctx.replyWithChatAction("typing")
   if(!runningFlag && ctx.chat.id === adminID){
     await setTimer(ctx);
+    runningFlag = true;
     await ctx.reply("Timer set! ⌚");
   }
   await ctx.reply(`Hello ${ctx.chat.first_name}, Welcome to <b>What To Do</b> Bot!`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});

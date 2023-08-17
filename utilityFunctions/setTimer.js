@@ -3,7 +3,6 @@ const {channelID} = require("../botSettings");
 
 async function setTimer(ctx){
     let toPost;
-    runningFlag = true;
     setInterval(async ()=>{
         toPost = await preparePost();
         for(let post of toPost){

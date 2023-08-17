@@ -136,56 +136,59 @@ async function createPoll(conversation, ctx){
     }while(k<5)
 
     //send to user
-    //
-    let polls = "";
+    if(pollTemplate.poll_data.length>0){
+        let polls = "";
+        pollTemplate.poll_data.forEach((ele)=>{
+            let aPoll = "";
+            aPoll+=`<em>${ele.quest}</em>\n`;
+            ele.options.forEach((ele, i)=> aPoll+=`<b>${i+1}.</b> `+ele+`\n`);
+            polls+=`\n${aPoll}`;
+        })
 
-    pollTemplate.poll_data.forEach((ele)=>{
-        let aPoll = "";
-        aPoll+=`<em>${ele.quest}</em>\n`;
-        ele.options.forEach((ele, i)=> aPoll+=`<b>${i+1}.</b> `+ele+`\n`);
-        polls+=`\n${aPoll}`;
-    })
-
-    await ctx.reply(`${pollTemplate.scenario}\n${polls}`,{reply_markup: {
-            keyboard: [
-                [{text:"Continue"}],
-                [{text:"Cancel"}]
-            ],
-            resize_keyboard:true
-        } , parse_mode:"HTML"});
-
-    let verification = await conversation.waitFor(":text");
-    while(verification.msg.text !== "Continue" && verification.msg.text !== "Cancel"){
-        await ctx.reply("Only pick from the given options.", {
-            reply_markup: {
+        await ctx.reply(`${pollTemplate.scenario}\n${polls}`,{reply_markup: {
                 keyboard: [
                     [{text:"Continue"}],
                     [{text:"Cancel"}]
                 ],
                 resize_keyboard:true
+            } , parse_mode:"HTML"});
+
+        let verification = await conversation.waitFor(":text");
+        while(verification.msg.text !== "Continue" && verification.msg.text !== "Cancel"){
+            await ctx.reply("Only pick from the given options.", {
+                reply_markup: {
+                    keyboard: [
+                        [{text:"Continue"}],
+                        [{text:"Cancel"}]
+                    ],
+                    resize_keyboard:true
+                }
+            })
+            verification = await conversation.waitFor(":text");
+        }
+        let loadingMessage = await ctx.reply("Loading...",{reply_markup:{remove_keyboard:true}})
+        if(verification.msg.text === "Continue"){
+            const docId = await storePoll(pollTemplate);
+            await sendToAdmin(pollTemplate,docId,ctx);
+            try {
+                await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);
+            } catch (e) {
+                console.log(e);
             }
-        })
-        verification = await conversation.waitFor(":text");
-    }
-    let loadingMessage = await ctx.reply("Loading...",{reply_markup:{remove_keyboard:true}})
-    if(verification.msg.text === "Continue"){
-        const docId = await storePoll(pollTemplate);
-        await sendToAdmin(pollTemplate,docId,ctx);
-        try {
-            await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);
-        } catch (e) {
-            console.log(e);
+            await ctx.reply("Sent to admin for validation.");
+        }else{
+            try {
+                await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);
+            } catch (e) {
+                console.log(e);
+            }
+            await ctx.reply("Poll creation canceled.")
+            await ctx.conversation.exit();
         }
-        await ctx.reply("Sent to admin for validation.");
     }else{
-        try {
-            await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);
-        } catch (e) {
-            console.log(e);
-        }
-        await ctx.reply("Poll creation canceled.")
-        await ctx.conversation.exit();
+        await ctx.reply("No poll created.",{ reply_markup:{ remove_keyboard: true}})
     }
+
 }
 
 module.exports = createPoll
