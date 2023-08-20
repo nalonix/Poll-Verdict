@@ -1,10 +1,11 @@
 const moment = require("moment/moment");
 const {Keyboard} = require("grammy");
-const {storePoll} = require("../utils");
+const {storePoll} = require("../firebase/firebaseUtils");
 const sendToAdmin = require("../utilityFunctions/sendToAdmin")
 async function createPoll(conversation, ctx){
     let pollTemplate ={
         creator_id: ctx.chat.id,
+        tag:"",
         created_at: moment().format('YYYY-MM-DD HH:mm'),
         scenario: "",
         poll_data:[
@@ -137,6 +138,33 @@ async function createPoll(conversation, ctx){
 
     //send to user
     if(pollTemplate.poll_data.length>0){
+        // TODO: generate keyboard from array of valid tags
+        await ctx.reply("Select 2 tags for your poll?",{
+            reply_markup: {
+                keyboard: [
+                    [{text:"DecideForMe"}, {text:"WouldYouRather"}],
+                    [{text:"Life"},{text:"Relationships"}],
+                    [{text:"Hypothetical"},{text:"Explicit"}],
+                    [{text:"Career"},{text:"YourOpinion"}],
+                    [{text:"Other"},{text:"Skip"}]
+                ],
+                resize_keyboard: true
+            }
+        });
+
+        let tag;
+        const validTags = ["DecideForMe", "WouldYouRather", "Life", "Relationships", "Hypothetical", "Explicit", "Career", "YourOpinion", "Other"];
+        do {
+            tag = await conversation.waitFor(":text");
+            if (tag.msg.text === "Skip") {
+                break;
+            } else if (validTags.includes(tag.msg.text)) {
+                pollTemplate.tag = tag.msg.text;
+            } else {
+                await ctx.reply("Invalid tag. Please choose from the available options.");
+            }
+        } while (!pollTemplate.tag);
+
         let polls = "";
         pollTemplate.poll_data.forEach((ele)=>{
             let aPoll = "";
@@ -188,7 +216,7 @@ async function createPoll(conversation, ctx){
     }else{
         await ctx.reply("No poll created.",{ reply_markup:{ remove_keyboard: true}})
     }
-
+    console.log(pollTemplate)
 }
 
 module.exports = createPoll

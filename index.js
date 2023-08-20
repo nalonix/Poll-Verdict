@@ -7,11 +7,11 @@ const {
 
 const setTimer = require("./utilityFunctions/setTimer")
 //utils
-const { verifyPoll, denyPoll, getUserPolls} = require('./utils.js')
+const { userAuth,verifyPoll, denyPoll, getUserPolls, getSubscriptions, manageSub} = require('./firebase/firebaseUtils.js')
 //
-const myPollsPagination = require("./myPollsPagination.js")
+const myPollsPagination = require("./UI Controls/myPollsPagination.js")
 // Create an instance of the `Bot` class and pass your bot token to it.
-const bot = new Bot("6539896023:AAG-0vOFSeJxmCU526JZOvxrSK_TFR7tdYo"); // <-- put your bot token between the ""
+const bot = new Bot(""); // <-- put your bot token between the ""
 
 //Settings
 const {adminID} = require("./botSettings");
@@ -30,6 +30,12 @@ bot.use(session({
 // Install the conversations plugin.
 bot.use(conversations());
 
+// callbacks
+const myAccountCallback  = require("./callbacks/myAccountCallback");
+const menuCallback = require("./callbacks/menuCallback");
+const genericCallback = require("./callbacks/genericCallback")
+
+
 // Error handler
 bot.catch((err, ctx) => {
   console.error('Error occurred:', err); 
@@ -41,26 +47,16 @@ const createPoll = require("./conversations/createPollConvo")
 bot.use(createConversation(createPoll));
 // middleware to check if member of channel
 const checkMembership = require("./middlewares/checkMembership")
+const {getSubscriberIds} = require("./firebase/firebaseUtils");
 bot.use(checkMembership);
 
-// You can now register listeners on your bot object `bot`.
-// grammY will call the listeners when users send messages to your bot.
 
 
 
-async function myaccountResponse(ctx){
-  if(ctx.callbackQuery)
-    ctx.deleteMessage();
-  await ctx.api.sendMessage(ctx.chat.id, "User info",{
-    reply_markup: {
-      inline_keyboard: [
-        [
-          {text:"My Polls", callback_data:"mypolls"}
-        ]
-      ]
-    }
-  });
-}
+
+
+//Keyboards ⌨️
+const buildSubscriptionsKeyboard = require("./keyboards/subscriptionsKeyboard")
 
 // Handle the /start command.
 bot.command("start", async(ctx) => {
@@ -70,16 +66,15 @@ bot.command("start", async(ctx) => {
     runningFlag = true;
     await ctx.reply("Timer set! ⌚");
   }
+  await userAuth(ctx.chat);
   await ctx.reply(`Hello ${ctx.chat.first_name}, Welcome to <b>What To Do</b> Bot!`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
 })
 
-bot.command("menu",async (ctx)=>{
-  await ctx.reply(`Here's the menu, what would you like to do?`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
-})
+bot.command("menu",async (ctx)=> menuCallback(ctx))
 
 bot.callbackQuery("menu",async (ctx)=>{
   await ctx.deleteMessage();
-  await ctx.reply(`Here's the menu, what would you like to do?`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
+  await menuCallback(ctx);
 })
 
 
@@ -93,20 +88,12 @@ bot.command("createpoll", async (ctx) => {
 });
 
 
-
 bot.command("account",async (ctx)=>{
-  await myaccountResponse(ctx);
+  await myAccountCallback(ctx);
 })
 bot.callbackQuery("account",async ctx=>{
-  await myaccountResponse(ctx);
+  await myAccountCallback(ctx);
 })
-// bot.command("cancel", async (ctx) => {
-//   await ctx.conversation.exit();
-//   await ctx.replyWithChatAction("typing");
-//   bot.api.sendMessage(ctx.chat.id, "Operation canceled", {reply_markup: { remove_keyboard: true },})
-// });
-
-
 
 
 bot.callbackQuery('mypolls',async ctx=>{
@@ -114,13 +101,7 @@ bot.callbackQuery('mypolls',async ctx=>{
   let all_my_polls = await getUserPolls(ctx.chat.id);
   ctx.session.myPolls = all_my_polls;
   ctx.session.currentPage =0;
-  // keyboard to select - proceed or cancel
-  // let myPollsKeyboard = all_my_polls.map(ele=>{
-  //   return [{text:ele.quest, url: `https://t.me/pixel_verse/${ele.message_id}`}]
-  // });
-  //myPollsKeyboard.push([{text: "◀️", callback_data: "back"},{text:"️▶️", callback_data: "forward"}]);
   await myPollsPagination(ctx);
-  //await ctx.api.sendMessage(ctx.chat.id,`${ctx.chat.first_name} polls: `,{reply_markup: { inline_keyboard: myPollsKeyboard, resize_keyboard: false }})
 })
 
 // Handle the "Next" button callback
@@ -136,7 +117,6 @@ bot.callbackQuery('next', async (ctx) => {
   await myPollsPagination(ctx);
 });
 
-
 bot.callbackQuery('return', async (ctx) => {
   try{
     await ctx.deleteMessage()
@@ -149,37 +129,24 @@ bot.callbackQuery('return', async (ctx) => {
   await myPollsPagination(ctx);
 });
 
+bot.callbackQuery("mysubscriptions", async (ctx)=>{
+  await ctx.deleteMessage();
+  const subscriptionsKeyboard = await buildSubscriptionsKeyboard(ctx);
+  await ctx.reply(`${ctx.chat.first_name} subscriptions: `,{
+    reply_markup:{
+      inline_keyboard:subscriptionsKeyboard
+    }
+  });
+
+})
+
 //verification
 bot.on("callback_query:data", async (ctx) => {
-  const str = ctx.callbackQuery.data;
-  const arr = str.split(",");
-  if(scenarioId !== 0){
-    await bot.api.deleteMessage(adminID, scenarioId);
-    scenarioId = 0;
-  }
-  if(arr[0].trim() === 'adminverify'){
-    let {status, creator_id} = await verifyPoll(arr[1].trim());
-    await ctx.deleteMessage();
-    if(status === "success"){
-      await ctx.api.sendMessage(creator_id, "Poll Accepted");
-    }
-  }else if(arr[0].trim()=== 'admindeny'){
-    let { status, creator_id } = await denyPoll(arr[1].trim())
-    await ctx.deleteMessage();
-    if(status === "success"){
-      await ctx.api.sendMessage(creator_id, "Poll Denied");
-    }
-  }
-  //⭐
-  await ctx.answerCallbackQuery(); // remove loading animation
+      await genericCallback(ctx);
 });
 
 // Handle other messages.
 bot.on("message", (ctx) => ctx.reply("Got another message!"));
-// handle 
-//bot.on("message", (ctx) => ctx.reply("Got another message!"));
 
-// Now that you specified how to handle messages, you can start your bot.
-// This will connect to the Telegram servers and wait for messages.
 // Start the bot.
 bot.start();

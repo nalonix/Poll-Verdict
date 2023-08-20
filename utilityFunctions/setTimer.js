@@ -1,4 +1,4 @@
-const {preparePost, updateUserPolls} = require("../utils");
+const {preparePost, updateUserPolls, getSubscriberIds} = require("../firebase/firebaseUtils");
 const {channelID} = require("../botSettings");
 
 async function setTimer(ctx){
@@ -6,17 +6,44 @@ async function setTimer(ctx){
     setInterval(async ()=>{
         toPost = await preparePost();
         for(let post of toPost){
+            // notify subscribers of post.tags
+
+
+                //get tagName document
+                // loop through subscribers array and ctx.api.sendMessage(subsciberId, notification message)
+                //
+
+
             if(post.scenario.length > 0) {
                 let scenarioMessage = await ctx.api.sendMessage(channelID, post.scenario)
             }
 
+            let notification = "";
             for(let poll of post.poll_data){
-                console.log(post)
+                let poll_name;
                 let pollMessage = await ctx.api.sendPoll(channelID,poll.quest,poll.options);
-                if(post.poll_data.indexOf(poll)){
-                    await updateUserPolls(pollMessage.message_id, poll.quest, post.creator_id);
+                await updateUserPolls(pollMessage.message_id, poll.quest, post.creator_id);
+                //cut string if more than 22 chx
+                if(poll.quest.length > 20)
+                    poll_name = poll.quest.slice(0,20)+'...'
+                notification += `<a href="https://t.me/pixel_verse/${pollMessage.message_id}">${poll_name}</a>\n`;
+            }
+
+
+            if(post.tag.length > 0){
+                const subscriberIds = await getSubscriberIds(post.tag);
+                for(let subscriber of subscriberIds){
+                    try {
+                        await ctx.api.sendMessage(subscriber, `${post.tag} tagged post has been made.\n${notification}`,{
+                            parse_mode:"HTML"
+                        })
+                    } catch (e) {
+                        console.log(e);
+                    }
                 }
             }
+            await ctx.api.sendMessage(post.creator_id, `Your poll[s] has been posted`);
+
         }
     }, 1000*60); //6000*60*2
 }

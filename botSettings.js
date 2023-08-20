@@ -1,5 +1,5 @@
-const adminID = 604247733
-const botID = "donidev_bot"
-const channelID = "@pixel_verse"
+const adminID =
+const botID = ""
+const channelID = "@"
 
 module.exports = {adminID, botID, channelID}

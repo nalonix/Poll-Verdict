@@ -125,7 +125,7 @@ async function preparePost() {
               return user_name;
           } else {
               try {
-                  await setDoc(documentRef, {first_name: user_data.first_name, username: user_data.username, my_polls: []});
+                  await setDoc(documentRef, {first_name: user_data.first_name, username: user_data.username, my_polls: [], subscriptions: []});
                   console.log('Document successfully written with the specific ID.');
               } catch (error) {
                   console.error('Error writing document:', error);
@@ -134,7 +134,6 @@ async function preparePost() {
       } catch (error) {
           console.error("Error getting document:", error);
       }
-
 
       return user_name;
   }
@@ -151,11 +150,130 @@ async function getUserPolls(userId){
         }
     } catch (error) {
         console.error("Error getting document:", error);
+        return [];
     }
 
 }
 
-module.exports ={storePoll,verifyPoll,denyPoll,preparePost,userAuth,updateUserPolls, getUserPolls}
+async function getSubscriberIds(tag){
+    try {
+        const documentRef = await doc(db, "subscriptionData", tag);
+        const documentSnapshot = await getDoc(documentRef);
+        if (documentSnapshot.exists()) {
+            //delete from all polls
+            return documentSnapshot.data().ids;
+        } else {
+            console.log("Document not found");
+            return [];
+        }
+    } catch (error) {
+        console.error("Error getting document:", error);
+        return [];
+    }
+}
+
+
+async function getSubscriptions(userId){
+    console.log(userId)
+    try {
+        const documentRef = await doc(db, "user", `${userId}`);
+        const documentSnapshot = await getDoc(documentRef);
+        if (documentSnapshot.exists()) {
+            //delete from all polls
+            return documentSnapshot.data().subscriptions;
+        } else {
+            console.log("Document not found");
+            return [];
+        }
+    } catch (error) {
+        console.error("Error getting document:", error);
+        return [];
+    }
+}
+
+async function manageSub(userId, tag){
+    console.log(userId, tag)
+
+    let userSubs = await getSubscriptions(userId);
+    if(userSubs.includes(tag)){
+        //un subscribe
+        // delete from ids array of tag document
+    /// 😁😁😁😁😁😁😁😁😁😁😁😁😁😁😁😁😁😁😁😁😁😁
+        // Fetch the Firestore document with the array field
+        const tagRef = doc(db, 'subscriptionData', tag);
+        const docSnap = await getDoc(tagRef);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            let ids = data.ids;
+            // Add a new element to the answers array
+            ids.splice(ids.indexOf(userId),1);
+            try {
+                let new_ids = [...ids];
+                await updateDoc(tagRef, { ids: new_ids });
+                // update user sub
+                const userRef = doc(db, 'user', `${userId}`);
+                try {
+                    const new_subs = userSubs.filter(sub => sub !== tag);
+                    await updateDoc(userRef, { subscriptions: new_subs});
+                    return {status: "success", message: `unsubscribed from ${tag}`}
+                } catch (error) {
+                    console.error('Error updating document:', error);
+                    // TODO: revert above update❤️
+                    return {status: "fail", message: "Error updating document"}
+                }
+
+            } catch (error) {
+                console.error('Error updating document:', error);
+            }
+        }
+        //🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆😁👎✅✅✅
+    }else{
+        if(userSubs.length >= 3){
+            console.log("Only 3 allowed")
+            return { status: "fail", message: "only 3 subs allowed max"}
+        }else{
+            // subscribe
+            // -- update my subs array
+            // Fetch the Firestore document with the array field
+            const tagRef = doc(db, 'subscriptionData', tag);
+            const docSnap = await getDoc(tagRef);
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const ids = data.ids;
+                // Add a new element to the ids array
+                try {
+                    let new_ids = [...ids, userId];
+                    await updateDoc(tagRef, { ids: new_ids });
+                    const userRef = doc(db, 'user', `${userId}`);
+                    try {
+                        let new_subs = [...userSubs, tag];
+                        await updateDoc(userRef, { subscriptions: new_subs});
+                        return {status: "success", message: "subscription added"};
+                    } catch (error) {
+                        console.error('Error updating document:', error);
+                        // TODO: remove from the tags ids array ❤️ *revert update
+                        return {status: "fail", message: "Error updating document"}
+                    }
+            }catch (e){
+                    console.error("Document not found", e)
+                    return {status:"fail", message: "Document not found"}
+                }
+            }else{
+                console.error("Tag document not found");
+                return {status: "fail", message: "error locating tag data"}
+            }
+
+
+
+
+        }
+
+    }
+
+
+}
+
+module.exports ={storePoll,verifyPoll,denyPoll,preparePost,userAuth,updateUserPolls, getUserPolls, getSubscriberIds, getSubscriptions, manageSub}
 
 
 

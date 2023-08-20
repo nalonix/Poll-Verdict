@@ -1,0 +1,17 @@
+async function myAccountCallback(ctx){
+    if(ctx.callbackQuery)
+        ctx.deleteMessage();
+    await ctx.api.sendMessage(ctx.chat.id, "User info",{
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    {text:"My Polls", callback_data:"mypolls"},
+                    {text:"Subscriptions", callback_data:"mysubscriptions"},
+                ]
+            ],
+
+        }
+    });
+}
+
+module.exports = myAccountCallback;
