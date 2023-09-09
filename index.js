@@ -73,13 +73,20 @@ bot.command("start", async(ctx) => {
 bot.command("menu",async (ctx)=> menuCallback(ctx))
 
 bot.callbackQuery("menu",async (ctx)=>{
-  await ctx.deleteMessage();
+  try{
+    await ctx.deleteMessage();
+  }catch (e) {
+    console.log(e);
+  }
   await menuCallback(ctx);
 })
 
-
 bot.callbackQuery("createpoll",async ctx=>{
-  await ctx.deleteMessage();
+  try{
+    await ctx.deleteMessage();
+  }catch (e) {
+    console.log(e);
+  }
   await ctx.conversation.enter("createPoll");
 });
 // handle poll
@@ -97,7 +104,11 @@ bot.callbackQuery("account",async ctx=>{
 
 
 bot.callbackQuery('mypolls',async ctx=>{
-  await ctx.deleteMessage();
+  try{
+    await ctx.deleteMessage();
+  }catch (e) {
+    console.log(e)
+  }
   let all_my_polls = await getUserPolls(ctx.chat.id);
   ctx.session.myPolls = all_my_polls;
   ctx.session.currentPage =0;
@@ -130,7 +141,11 @@ bot.callbackQuery('return', async (ctx) => {
 });
 
 bot.callbackQuery("mysubscriptions", async (ctx)=>{
-  await ctx.deleteMessage();
+  try{
+    await ctx.deleteMessage();
+  }catch (e) {
+    console.log(e)
+  }
   const subscriptionsKeyboard = await buildSubscriptionsKeyboard(ctx);
   await ctx.reply(`${ctx.chat.first_name} subscriptions: `,{
     reply_markup:{

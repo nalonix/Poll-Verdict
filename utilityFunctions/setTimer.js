@@ -13,8 +13,10 @@ async function setTimer(ctx){
                 //
 
 
-            if(post.hasContext) {
-                let contextMessage = await ctx.api.sendMessage(channelID, post.context.text)
+            if(post.hasContext && post.context.type === "Text") {
+                let contextMessage = await ctx.api.sendMessage(channelID, post.context.text);
+            }else if(post.hasContext && post.context.type === "Image"){
+                let contextPhoto = await ctx.api.sendPhoto(channelID, post.context.url, {caption: post.context.text});
             }
 
             let notification = "";

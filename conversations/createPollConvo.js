@@ -2,6 +2,7 @@ const moment = require("moment/moment");
 const {Keyboard} = require("grammy");
 const {storePoll} = require("../firebase/firebaseUtils");
 const sendToAdmin = require("../utilityFunctions/sendToAdmin")
+
 async function createPoll(conversation, ctx){
     let pollTemplate ={
         creator_id: ctx.chat.id,
@@ -9,9 +10,9 @@ async function createPoll(conversation, ctx){
         created_at: moment().format('YYYY-MM-DD HH:mm'),
         hasContext: false,
         context: {
-          type: "",
-          text:"",
-          url:""
+            type: "",
+            text:"",
+            url:""
         },
         poll_data:[
         ],
@@ -29,9 +30,10 @@ async function createPoll(conversation, ctx){
         await ctx.reply("Only choose from the given options.\nPick preference: ",{reply_markup: keyboard});
         type = await conversation.waitFor(":text");
     }
-    //Accept scenario if wanted
-    if(type.msg.text === "Add Context"){
+
+    if(type.msg.text === "Add Context") {
         pollTemplate.hasContext = true;
+
         let keyboard = new Keyboard()
             .text("Image").row()
             .text("Text").row().placeholder("Choose the format: ").oneTime().resized();
@@ -44,26 +46,21 @@ async function createPoll(conversation, ctx){
         }
 
         if(contextType.msg.text === "Image"){
-            // pollTemplate.context.type = "Image";
-            // await ctx.reply(`Send the image: `, {
-            //     reply_markup: { remove_keyboard: true },
-            // });
-            // const { message } = await conversation.wait();
-            // if (!message?.photo) {
-            //     await ctx.reply("That is not a photo! I'm out!");
-            //     return;
-            // }
-            // //console.log(message.photo[0].file_id);
-            // await ctx.replyWithPhoto(message.photo[0].file_id);
-            // //return;
-            // // if all goes well save scenario
-            // //pollTemplate.context.url = contextImage;
-            console.log("What is this problem??????????????");
-
-
+            pollTemplate.context.type = "Image";
+            await ctx.reply(`Send the image: `, {
+                reply_markup: { remove_keyboard: true },
+            });
+            const { message } = await conversation.wait();
+            if (!message?.photo) {
+                await ctx.reply("That is not a photo! I'm out!");
+                return;
+            }
+            pollTemplate.context.url = message.photo[0].file_id;
+            message?.caption && (pollTemplate.context.text = message.caption);
         }else if(contextType.msg.text === "Text"){
             pollTemplate.context.type = "Text";
             await ctx.reply(`Write the context: 710 characters max `, {
+                reply_markup: { remove_keyboard: true },
                 reply_markup: { remove_keyboard: true },
             });
             let context = await conversation.waitFor(":text");
@@ -77,10 +74,9 @@ async function createPoll(conversation, ctx){
             }
             // if all goes well save scenario
             pollTemplate.context.text = context.msg.text;
-
         }
-
-
+    }else if(type.msg.text === "No Context"){
+        pollTemplate.hasContext = false;
     }
 
     let k = 0;
@@ -127,6 +123,7 @@ async function createPoll(conversation, ctx){
                         },
                         parse_mode:"HTML"
                     })
+
                     let verification = await conversation.waitFor(":text");
                     while(verification.msg.text !== "Continue" && verification.msg.text !== "Skip"){
                         await ctx.reply("Only pick from the given options.", {
@@ -185,7 +182,7 @@ async function createPoll(conversation, ctx){
     //send to user
     if(pollTemplate.poll_data.length>0){
         // TODO: generate keyboard from array of valid tags
-        await ctx.reply("Select 2 tags for your poll?",{
+        await ctx.reply("Tag your poll: ",{
             reply_markup: {
                 keyboard: [
                     [{text:"DecideForMe"}, {text:"WouldYouRather"}],
@@ -212,37 +209,52 @@ async function createPoll(conversation, ctx){
             }
         } while (!pollTemplate.tag);
 
-        let polls = "";
-        pollTemplate.poll_data.forEach((ele)=>{
-            let aPoll = "";
-            aPoll+=`<em>${ele.quest}</em>\n`;
-            ele.options.forEach((ele, i)=> aPoll+=`<b>${i+1}.</b> `+ele+`\n`);
-            polls+=`\n${aPoll}`;
-        })
+        /*
 
-        await ctx.reply(`${pollTemplate.context.text}\n${polls}`,{reply_markup: {
-                keyboard: [
-                    [{text:"Continue"}],
-                    [{text:"Cancel"}]
-                ],
-                resize_keyboard:true
-            } , parse_mode:"HTML"});
+        // let polls = "";
+        // pollTemplate.poll_data.forEach((ele)=>{
+        //     let aPoll = "";
+        //     aPoll+=`<em>${ele.quest}</em>\n`;
+        //     ele.options.forEach((ele, i)=> aPoll+=`<b>${i+1}.</b> `+ele+`\n`);
+        //     polls+=`\n${aPoll}`;
+        // })
+        //
+        // if(pollTemplate.hasContext && pollTemplate.context.type === "Text"){
+        //     await ctx.reply(`${pollTemplate.context.text}\n${polls}`,{reply_markup: {
+        //             keyboard: [
+        //                 [{text:"Continue"}],
+        //                 [{text:"Cancel"}]
+        //             ],
+        //             resize_keyboard:true
+        //         } , parse_mode:"HTML"});
+        // }else if(pollTemplate.hasContext && pollTemplate.context.type === "Image"){
+        //     let photoForVerification = await ctx.replyWithPhoto(pollTemplate.context.url, { caption: pollTemplate.context.text});
+        //     await ctx.reply(`${polls}`,{reply_markup: {
+        //             keyboard: [
+        //                 [{text:"Continue"}],
+        //                 [{text:"Cancel"}]
+        //             ],
+        //             resize_keyboard:true
+        //         } , parse_mode:"HTML"});
+        // }
+        //
+        // let verification = await conversation.waitFor(":text");
+        // while(verification.msg.text !== "Continue" && verification.msg.text !== "Cancel"){
+        //     await ctx.reply("Only pick from the given options.", {
+        //         reply_markup: {
+        //             keyboard: [
+        //                 [{text:"Continue"}],
+        //                 [{text:"Cancel"}]
+        //             ],
+        //             resize_keyboard:true
+        //         }
+        //     })
+        //     verification = await conversation.waitFor(":text");
+        // }
 
-        let verification = await conversation.waitFor(":text");
-        while(verification.msg.text !== "Continue" && verification.msg.text !== "Cancel"){
-            await ctx.reply("Only pick from the given options.", {
-                reply_markup: {
-                    keyboard: [
-                        [{text:"Continue"}],
-                        [{text:"Cancel"}]
-                    ],
-                    resize_keyboard:true
-                }
-            })
-            verification = await conversation.waitFor(":text");
-        }
+*/
         let loadingMessage = await ctx.reply("Loading...",{reply_markup:{remove_keyboard:true}})
-        if(verification.msg.text === "Continue"){
+        //if(verification.msg.text === "Continue"){
             const docId = await storePoll(pollTemplate);
             await sendToAdmin(pollTemplate,docId,ctx);
             try {
@@ -251,19 +263,19 @@ async function createPoll(conversation, ctx){
                 console.log(e);
             }
             await ctx.reply("Sent to admin for validation.");
-        }else{
-            try {
-                await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);
-            } catch (e) {
-                console.log(e);
-            }
-            await ctx.reply("Poll creation canceled.")
-            await ctx.conversation.exit();
-        }
+        //}else{
+          //  try {
+            //    await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);
+            //} catch (e) {
+            //    console.log(e);
+           // }
+           // await ctx.reply("Poll creation canceled.")
+           // await ctx.conversation.exit();
+        //}
+
     }else{
         await ctx.reply("No poll created.",{ reply_markup:{ remove_keyboard: true}})
     }
-    console.log(pollTemplate)
-}
 
+}
 module.exports = createPoll
