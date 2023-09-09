@@ -11,7 +11,7 @@ const { userAuth,verifyPoll, denyPoll, getUserPolls, getSubscriptions, manageSub
 //
 const myPollsPagination = require("./UI Controls/myPollsPagination.js")
 // Create an instance of the `Bot` class and pass your bot token to it.
-const bot = new Bot("6539896023:AAG-0vOFSeJxmCU526JZOvxrSK_TFR7tdYo"); // <-- put your bot token between the ""
+const bot = new Bot("6539896023:AAHFtPcxBgu8Gi2MADeI51HXqNeetvVh6p0"); // <-- put your bot token between the ""
 
 //Settings
 const {adminID} = require("./botSettings");
@@ -42,19 +42,15 @@ bot.catch((err, ctx) => {
 });
 
 
-
+/*
 const createPoll = require("./conversations/createPollConvo")
 bot.use(createConversation(createPoll));
+*/
 // middleware to check if member of channel
+
 const checkMembership = require("./middlewares/checkMembership")
 const {getSubscriberIds} = require("./firebase/firebaseUtils");
 bot.use(checkMembership);
-
-
-
-
-
-
 //Keyboards ⌨️
 const buildSubscriptionsKeyboard = require("./keyboards/subscriptionsKeyboard")
 
@@ -80,11 +76,11 @@ bot.callbackQuery("menu",async (ctx)=>{
 
 bot.callbackQuery("createpoll",async ctx=>{
   await ctx.deleteMessage();
-  await ctx.conversation.enter("createPoll");
+  //await ctx.conversation.enter("createPoll");
 });
 // handle poll
 bot.command("createpoll", async (ctx) => {
-  await ctx.conversation.enter("createPoll");
+  //await ctx.conversation.enter("createPoll");
 });
 
 
