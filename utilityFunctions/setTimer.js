@@ -7,13 +7,16 @@ async function setTimer(ctx){
         toPost = await preparePost();
         for(let post of toPost){
             // notify subscribers of post.tags
+
                 //get tagName document
                 // loop through subscribers array and ctx.api.sendMessage(subsciberId, notification message)
                 //
 
 
-            if(post.scenario.length > 0) {
-                let scenarioMessage = await ctx.api.sendMessage(channelID, post.scenario)
+            if(post.hasContext && post.context.type === "Text") {
+                let contextMessage = await ctx.api.sendMessage(channelID, post.context.text);
+            }else if(post.hasContext && post.context.type === "Image"){
+                let contextPhoto = await ctx.api.sendPhoto(channelID, post.context.url, {caption: post.context.text});
             }
 
             let notification = "";
