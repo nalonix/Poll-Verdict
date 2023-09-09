@@ -14,7 +14,7 @@ async function sendToAdmin(pollTemplate,docId,ctx) {
         ele.options.forEach((ele, i)=> aPoll+=`<b>${i+1}.</b> `+ele+`\n`);
         polls+=`\n${aPoll}`;
     })
-    await ctx.api.sendMessage(adminID,`${pollTemplate.scenario}\n${polls}`,{reply_markup: adminVerifyKeyboard, parse_mode:"HTML"});
+    await ctx.api.sendMessage(adminID,`${pollTemplate.context.text}\n${polls}`,{reply_markup: adminVerifyKeyboard, parse_mode:"HTML"});
 }
 
 module.exports = sendToAdmin
