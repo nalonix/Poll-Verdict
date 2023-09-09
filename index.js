@@ -11,7 +11,7 @@ const { userAuth,verifyPoll, denyPoll, getUserPolls, getSubscriptions, manageSub
 //
 const myPollsPagination = require("./UI Controls/myPollsPagination.js")
 // Create an instance of the `Bot` class and pass your bot token to it.
-const bot = new Bot(""); // <-- put your bot token between the ""
+const bot = new Bot("6539896023:AAG-0vOFSeJxmCU526JZOvxrSK_TFR7tdYo"); // <-- put your bot token between the ""
 
 //Settings
 const {adminID} = require("./botSettings");

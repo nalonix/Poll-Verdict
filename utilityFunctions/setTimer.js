@@ -26,6 +26,8 @@ async function setTimer(ctx){
                 //cut string if more than 22 chx
                 if(poll.quest.length > 20)
                     poll_name = poll.quest.slice(0,20)+'...'
+                else
+                    poll_name = poll.quest
                 notification += `<a href="https://t.me/pixel_verse/${pollMessage.message_id}">${poll_name}</a>\n`;
             }
 
@@ -33,16 +35,24 @@ async function setTimer(ctx){
             if(post.tag.length > 0){
                 const subscriberIds = await getSubscriberIds(post.tag);
                 for(let subscriber of subscriberIds){
-                    try {
-                        await ctx.api.sendMessage(subscriber, `${post.tag} tagged post has been made.\n${notification}`,{
-                            parse_mode:"HTML"
-                        })
-                    } catch (e) {
-                        console.log(e);
+                    if (subscriber !== `${post.creator_id}`) {
+                        try {
+                            await ctx.api.sendMessage(subscriber, `${post.tag} tagged post has been made.\n${notification}`, {
+                                parse_mode: "HTML"
+                            })
+                        } catch (e) {
+                            console.log(e);
+                        }
                     }
                 }
             }
-            await ctx.api.sendMessage(post.creator_id, `Your poll[s] has been posted`);
+            try {
+                await ctx.api.sendMessage(post.creator_id, `You poll has been posted.\n${notification}`, {
+                    parse_mode: "HTML"
+                })
+            } catch (e) {
+                console.log(e);
+            }
 
         }
     }, 1000*60); //6000*60*2

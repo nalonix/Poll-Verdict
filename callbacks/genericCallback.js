@@ -3,7 +3,7 @@ const {verifyPoll, denyPoll, manageSub} = require("../firebase/firebaseUtils");
 const buildSubscriptionsKeyboard = require("../keyboards/subscriptionsKeyboard");
 
 async function genericCallback(ctx){
-
+    let scenarioId = 0;
     const str = ctx.callbackQuery.data;
     const arr = str.split(",");
     if(scenarioId !== 0){

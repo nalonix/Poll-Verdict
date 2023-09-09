@@ -1,7 +1,7 @@
 async function myAccountCallback(ctx){
     if(ctx.callbackQuery)
         ctx.deleteMessage();
-    await ctx.api.sendMessage(ctx.chat.id, "User info",{
+    await ctx.api.sendMessage(ctx.chat.id, `Settings - ${ctx.chat.first_name}`,{
         reply_markup: {
             inline_keyboard: [
                 [
