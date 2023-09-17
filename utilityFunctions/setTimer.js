@@ -10,7 +10,6 @@ async function setTimer(ctx){
 
                 //get tagName document
                 // loop through subscribers array and ctx.api.sendMessage(subsciberId, notification message)
-                //
 
 
             if(post.hasContext && post.context.type === "Text") {
