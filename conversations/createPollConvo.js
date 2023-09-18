@@ -197,7 +197,7 @@ async function createPoll(conversation, ctx){
         });
 
         let tag;
-        const validTags = ["DecideForMe", "WouldYouRather", "Life", "Relationships", "Hypothetical", "Explicit", "Career", "YourOpinion", "Code","Other"];
+        const validTags = ["DecideForMe", "Life", "Relationships", "Hypothetical", "Explicit", "Career", "YourOpinion", "Code","Other"];
         do {
             tag = await conversation.waitFor(":text");
             if (tag.msg.text === "Skip") {
@@ -253,9 +253,11 @@ async function createPoll(conversation, ctx){
         // }
 
 */
+
         let loadingMessage = await ctx.reply("Loading...",{reply_markup:{remove_keyboard:true}})
         //if(verification.msg.text === "Continue"){
             const docId = await storePoll(pollTemplate);
+            console.log("This is the user 🌞🌞!");
             await sendToAdmin(pollTemplate,docId,ctx);
             try {
                 await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);

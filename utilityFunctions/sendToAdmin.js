@@ -2,6 +2,7 @@ const {InlineKeyboard} = require("grammy");
 const {adminID} = require("../botSettings");
 
 async function sendToAdmin(pollTemplate,docId,ctx) {
+    console.log("You are in sent to admin function 🌚🌚🌚")
     let adminVerifyKeyboard = new InlineKeyboard()
         .text("Verify",`adminverify,${docId}`)
         .text("Cancel",`admindeny,${docId}`);
