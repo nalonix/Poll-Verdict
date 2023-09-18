@@ -7,10 +7,8 @@ async function setTimer(ctx){
         toPost = await preparePost();
         for(let post of toPost){
             // notify subscribers of post.tags
-
                 //get tagName document
                 // loop through subscribers array and ctx.api.sendMessage(subsciberId, notification message)
-
 
             if(post.hasContext && post.context.type === "Text") {
                 let contextMessage = await ctx.api.sendMessage(channelID, post.context.text);

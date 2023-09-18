@@ -195,7 +195,7 @@ bot.on("message", async (ctx) => {
     const pollId = ctx.message.reply_to_message.poll.id;
     const userId = ctx.from.id;
     console.log("⛔⛔⛔🤒");
-    
+
     // Store the user ID and poll ID to track who replied to which poll
     // You can use a database or an in-memory data structure for this purpose
     // For example: pollReplies[pollId].push(userId);

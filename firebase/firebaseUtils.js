@@ -20,7 +20,6 @@ async function storePoll(aPoll){
 
   async function verifyPoll(docId){   
     //get full poll data with document ID
-
     try {
         const documentRef = await doc(db, "test_all_polls", docId);
         const documentSnapshot = await getDoc(documentRef);
@@ -97,15 +96,17 @@ async function preparePost() {
       const documentSnapshot = await getDoc(documentRef);
       if (documentSnapshot.exists()) {
           const my_polls = documentSnapshot.data().my_polls;
+          const post_count = documentSnapshot.data().postCount;
 
           //cut string if more than 22 chx
           if(poll_name.length > 25)
             poll_name = poll_name.slice(0,25)+'...'
           // Add a new element to the my_polls array
           let new_poll = [...my_polls, {quest: poll_name,message_id}];
+          let new_post_count = post_count + 1;
           try {
               // Update the document with the new my_polls array
-              await updateDoc(doc(db, "user", `${creator_id}`), { my_polls: new_poll });
+              await updateDoc(doc(db, "user", `${creator_id}`), { my_polls: new_poll, postCount: new_post_count });
               console.log('Document successfully updated with new poll.');
           } catch (error) {
               console.error('Error updating document:', error);
