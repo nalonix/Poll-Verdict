@@ -2,11 +2,16 @@
 const {channelID} =  require("../botSettings");
 
 async function checkMembership(ctx,next){
-    const chat = await ctx.api.getChatMember(channelID,ctx.chat.id)
-    if ( chat.status !== "left") {
+    const chat = await ctx.api.getChatMember(channelID,ctx.chat.id);
+    if (ctx.message?.text.startsWith('/start')) {
+        // Do nothing and skip this middleware for /start command
         next();
-    } else {
-        await ctx.reply(`Please join our channel first ${channelID}`);
+    }else{
+        if ( chat.status !== "left") {
+            next();
+        } else {
+            await ctx.reply(`Please join our channel first ${channelID}`);
+        }
     }
 }
 

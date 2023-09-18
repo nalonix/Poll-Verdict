@@ -114,6 +114,35 @@ async function preparePost() {
 
   }
 
+  async function updateReferalCount(refererId, invitedId){
+      const documentRef = doc(user_ref, `${refererId}`);
+      // Get the current document data
+      const documentSnapshot = await getDoc(documentRef);
+      if (documentSnapshot.exists()) {
+          const invited_users = documentSnapshot.data().invitedUsers;
+          const referral_count = documentSnapshot.data().referralCount;
+
+          // Add a new element to the my_polls array
+          let new_invited_users;
+          invited_users.includes(invitedId) ? new_invited_users = new_invited_users = invited_users :  [...invited_users, invitedId];
+          let new_referral_count;
+          invited_users.includes(invitedId) ? new_referral_count = referral_count: new_referral_count = referral_count + 1;
+
+          try {
+              // Update the document with the new my_polls array
+              await updateDoc(doc(db, "user", `${refererId}`), { invitedUsers: new_invited_users, referralCount: new_referral_count });
+              console.log('Document successfully updated for new invitation.');
+              return {status:"success"}
+          } catch (error) {
+              console.error('Error updating document:', error);
+              return {status:"fail"};
+          }
+      }
+
+
+
+  }
+
   async  function userAuth(user_data){
     let user_name = user_data.first_name;
       try {
@@ -122,11 +151,24 @@ async function preparePost() {
           if (documentSnapshot.exists()) {
               const documentData = documentSnapshot.data();
               user_name = documentData.first_name;
-              return user_name;
+              return {status: "veteran member", user_name};
           } else {
               try {
-                  await setDoc(documentRef, {first_name: user_data.first_name, username: user_data.username, my_polls: [], subscriptions: []});
+                  await setDoc(documentRef,
+                      {
+                          first_name: user_data.first_name,
+                          username: user_data.username,
+                          my_polls: [],
+                          subscriptions: [],
+                          invitedUsers: [],
+                          referralCount: 0,
+                          engagementCount: 0,
+                          postCount: 0,
+                          credits: 2
+                      }
+                  );
                   console.log('Document successfully written with the specific ID.');
+                  return {status: "new member", user_name};
               } catch (error) {
                   console.error('Error writing document:', error);
               }
@@ -135,7 +177,7 @@ async function preparePost() {
           console.error("Error getting document:", error);
       }
 
-      return user_name;
+      return {status: "veteran member",user_name};
   }
 async function getUserPolls(userId){
     try {
@@ -273,7 +315,7 @@ async function manageSub(userId, tag){
 
 }
 
-module.exports ={storePoll,verifyPoll,denyPoll,preparePost,userAuth,updateUserPolls, getUserPolls, getSubscriberIds, getSubscriptions, manageSub}
+module.exports ={storePoll,verifyPoll,denyPoll,preparePost,userAuth,updateUserPolls, updateReferalCount, getUserPolls, getSubscriberIds, getSubscriptions, manageSub}
 
 
 

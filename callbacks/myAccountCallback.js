@@ -7,6 +7,9 @@ async function myAccountCallback(ctx){
                 [
                     {text:"My Polls", callback_data:"mypolls"},
                     {text:"Subscriptions", callback_data:"mysubscriptions"},
+                ],
+                [
+                    {text:"Referral Link", callback_data:"getreferrallink"},
                 ]
             ],
 
