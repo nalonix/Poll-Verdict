@@ -37,9 +37,17 @@ const generateReferalLink = require("./callbacks/getReferalLinkCallback")
 const genericCallback = require("./callbacks/genericCallback")
 
 
+//commands
+const aboutCommand = require("./commands/aboutCommand")
+const faqCommand = require("./commands/faqCommand")
+const rulesCommand = require("./commands/rulesCommand")
+const treeshakingCommand = require("./commands/admin/treeshakingCommand")
+
+
 // Error handler
 bot.catch((err, ctx) => {
-  console.error('Error occurred:', err); 
+  // console.error('Error occurred:', err);
+
 });
 
 
@@ -55,6 +63,7 @@ const buildSubscriptionsKeyboard = require("./keyboards/subscriptionsKeyboard")
 
 // Handle the /start command.
 bot.command("start", async(ctx) => {
+  // TODO: divide to different function
   await ctx.replyWithChatAction("typing");
   //console.log(ctx?.match)
   if(!ctx.match){
@@ -70,10 +79,19 @@ bot.command("start", async(ctx) => {
     const argument = ctx.match;
     if(argument.toLowerCase().startsWith("ref")){
       const authResponse = await userAuth(ctx.chat);
-      const refererId = argument.slice(3);
-      if(authResponse.status === "new member" && refererId !== ctx.chat.id.toString()){
+      const refererId = parseInt(argument.slice(3))/4;
+      if(authResponse.status === "new member" && refererId.toString() !== ctx.chat.id.toString()){
         try{
-          const updateResponse = await updateReferalCount(refererId, ctx.chat.id);
+          const updateResponse = await updateReferalCount(refererId, ctx.chat.id, "new member");
+          updateResponse.status === "success" && await ctx.api.sendMessage(refererId, `User <b>${ctx.chat.first_name}</b> joined through referral link!`,{parse_mode:"HTML"});
+          await ctx.reply(`Hello ${ctx.chat.first_name}, Welcome to <b>What To Do</b> Bot!`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
+        }catch (e) {
+          console.log(e);
+          await ctx.reply("Referer not found!")
+        }
+      }else if(authResponse.status === "veteran member" && refererId.toString() !== ctx.chat.id.toString() ){
+        try{
+          const updateResponse = await updateReferalCount(refererId, ctx.chat.id, "veteran member");
           updateResponse.status === "success" && await ctx.api.sendMessage(refererId, `User <b>${ctx.chat.first_name}</b> joined through referral link!`,{parse_mode:"HTML"});
           await ctx.reply(`Hello ${ctx.chat.first_name}, Welcome to <b>What To Do</b> Bot!`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
         }catch (e) {
@@ -178,22 +196,37 @@ bot.callbackQuery('return', async (ctx) => {
 });
 
 
+bot.command("about",aboutCommand)
 
+bot.command("FAQ", faqCommand)
+
+bot.command("rules", rulesCommand)
+
+bot.command("contact", async (ctx)=>{
+  try{
+    await ctx.reply("Contact: @donidev");
+  }catch (e) {
+    throw new Error(e);
+  }
+})
+
+bot.command("treeshake", treeshakingCommand)
 //verification
 bot.on("callback_query:data", async (ctx) => {
       await genericCallback(ctx);
 });
 
-// Handle other messages.
-bot.command("test",async ctx=>{
-  await ctx.replyWithPoll("who is this?",["naol","windows","macOS"]);
-})
+
 bot.on("message", async (ctx) => {
-  await ctx.reply("Got another message!");
+  try{
+    await ctx.reply("Unknown message!");
+  }catch (e) {
+    throw new Error(e);
+  }
   // Check if the message is a reply to your poll message
   if (ctx.message.reply_to_message && ctx.message.reply_to_message.poll) {
-    const pollId = ctx.message.reply_to_message.poll.id;
-    const userId = ctx.from.id;
+    // const pollId = ctx.message.reply_to_message.poll.id;
+    // const userId = ctx.from.id;
     console.log("⛔⛔⛔🤒");
 
     // Store the user ID and poll ID to track who replied to which poll

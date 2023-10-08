@@ -2,7 +2,6 @@ const {InlineKeyboard} = require("grammy");
 const {adminID} = require("../botSettings");
 
 async function sendToAdmin(pollTemplate,docId,ctx) {
-    console.log("You are in sent to admin function 🌚🌚🌚")
     let adminVerifyKeyboard = new InlineKeyboard()
         .text("Verify",`adminverify,${docId}`)
         .text("Cancel",`admindeny,${docId}`);
@@ -25,10 +24,12 @@ async function sendToAdmin(pollTemplate,docId,ctx) {
     })
 
     if(pollTemplate.hasContext && pollTemplate.context.type === "Text"){
-        await ctx.reply(`${pollTemplate.context.text}\n${polls}`,{reply_markup: adminVerifyKeyboard, parse_mode:"HTML"});
+        await ctx.api.sendMessage(adminID,`${pollTemplate.context.text}\n${polls}`,{reply_markup: adminVerifyKeyboard, parse_mode:"HTML"});
     }else if(pollTemplate.hasContext && pollTemplate.context.type === "Image"){
-        let photoForVerification = await ctx.replyWithPhoto(pollTemplate.context.url, { caption: pollTemplate.context.text});
-        await ctx.reply(`${polls}`,{reply_markup: adminVerifyKeyboard, parse_mode:"HTML"});
+        let photoForVerification = await ctx.api.sendPhoto(adminID, pollTemplate.context.url, { caption: pollTemplate.context.text})
+        await ctx.api.sendMessage(adminID,`${polls}`,{reply_markup: adminVerifyKeyboard, parse_mode:"HTML"});
+    }else if(!pollTemplate.hasContext){
+        await ctx.api.sendMessage(adminID, `${polls}`, {reply_markup: adminVerifyKeyboard, parse_mode:"HTML"});
     }
 
 }

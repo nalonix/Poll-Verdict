@@ -2,10 +2,7 @@ const {getSubscriptions} = require("../firebase/firebaseUtils");
 
 async function buildSubscriptionsKeyboard(ctx){
     let subscriptions = await getSubscriptions(ctx.chat.id);
-    let tags = [
-        "Career", "DecideForMe", "Explicit", "Hypothetical",
-        "Life", "Relationships", "WouldYouRather", "YourOpinion", "Other"
-    ];
+    const tags = ["WhatToDo", "Life", "WouldYouRather" ,"Relationships", "Hypothetical", "Explicit", "Career", "Code","Other"];
 
     const rows = [];
 

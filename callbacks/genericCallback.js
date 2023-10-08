@@ -7,7 +7,11 @@ async function genericCallback(ctx){
     const str = ctx.callbackQuery.data;
     const arr = str.split(",");
     if(scenarioId !== 0){
-        await bot.api.deleteMessage(adminID, scenarioId);
+        try {
+            await ctx.api.deleteMessage(adminID, scenarioId);
+        } catch (e) {
+            throw new Error("Error deleting message: "+e)
+        }
         scenarioId = 0;
     }
     if(arr[0].trim() === 'adminverify'){
@@ -18,24 +22,39 @@ async function genericCallback(ctx){
         }
     }else if(arr[0].trim()=== 'admindeny'){
         let { status, creator_id } = await denyPoll(arr[1].trim())
-        await ctx.deleteMessage();
+        try {
+            await ctx.deleteMessage();
+        } catch (e) {
+            throw new Error("Error deleting message: "+e)
+        }
         if(status === "success"){
             await ctx.api.sendMessage(creator_id, "Poll Denied");
         }
     }else if(arr[0].trim() === 'managesub'){
         let messageId = ctx.update.callback_query.message.message_id;
         const response = await manageSub(ctx.chat.id, arr[1]);
-        console.log(response)
         const subscriptionsKeyboard = await buildSubscriptionsKeyboard(ctx);
         if(response.status === "success"){
-            await ctx.api.editMessageReplyMarkup(ctx.chat.id, messageId, {
-                reply_markup: { inline_keyboard: subscriptionsKeyboard }
-            });
+            try {
+                await ctx.api.editMessageReplyMarkup(ctx.chat.id, messageId, {
+                    reply_markup: {inline_keyboard: subscriptionsKeyboard}
+                });
+            } catch (e) {
+                throw new Error("Error updating message: "+e)
+            }
         }
-        await ctx.answerCallbackQuery({text: response.message});
+        try {
+            await ctx.answerCallbackQuery({text: response.message});
+        } catch (e) {
+            throw new Error(e);
+        }
     }
     //⭐
-    await ctx.answerCallbackQuery(); // remove loading animation
+    try {
+        await ctx.answerCallbackQuery();
+    } catch (e) {
+        throw new Error(e)
+    } // remove loading animation
 }
 
 module.exports = genericCallback;

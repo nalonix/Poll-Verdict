@@ -3,6 +3,7 @@ const {channelID} = require("../botSettings");
 
 async function setTimer(ctx){
     let toPost;
+    const nums = ["1️⃣", "2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣"];
     setInterval(async ()=>{
         toPost = await preparePost();
         for(let post of toPost){
@@ -19,7 +20,7 @@ async function setTimer(ctx){
             let notification = "";
             for(let poll of post.poll_data){
                 let poll_name;
-                let pollMessage = await ctx.api.sendPoll(channelID,poll.quest,poll.options);
+                let pollMessage = await ctx.api.sendPoll(channelID,`${nums[post.poll_data.indexOf(poll)]} ${poll.quest}`,poll.options);
                 await updateUserPolls(pollMessage.message_id, poll.quest, post.creator_id);
                 //cut string if more than 22 chx
                 if(poll.quest.length > 20)

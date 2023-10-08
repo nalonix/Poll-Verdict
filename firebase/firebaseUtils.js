@@ -97,6 +97,7 @@ async function preparePost() {
       if (documentSnapshot.exists()) {
           const my_polls = documentSnapshot.data().my_polls;
           const post_count = documentSnapshot.data().postCount;
+          console.log("Post count: "+post_count);
 
           //cut string if more than 22 chx
           if(poll_name.length > 25)
@@ -104,6 +105,7 @@ async function preparePost() {
           // Add a new element to the my_polls array
           let new_poll = [...my_polls, {quest: poll_name,message_id}];
           let new_post_count = post_count + 1;
+          console.log("new post count: "+new_post_count);
           try {
               // Update the document with the new my_polls array
               await updateDoc(doc(db, "user", `${creator_id}`), { my_polls: new_poll, postCount: new_post_count });
@@ -115,10 +117,11 @@ async function preparePost() {
 
   }
 
-  async function updateReferalCount(refererId, invitedId){
+  async function updateReferalCount(refererId, invitedId, membershipStatus){
       const documentRef = doc(user_ref, `${refererId}`);
       // Get the current document data
       const documentSnapshot = await getDoc(documentRef);
+
       if (documentSnapshot.exists()) {
           const invited_users = documentSnapshot.data().invitedUsers;
           const referral_count = documentSnapshot.data().referralCount;
@@ -127,10 +130,16 @@ async function preparePost() {
           let new_invited_users;
           invited_users.includes(invitedId) ? new_invited_users = new_invited_users = invited_users :  [...invited_users, invitedId];
           let new_referral_count;
-          invited_users.includes(invitedId) ? new_referral_count = referral_count: new_referral_count = referral_count + 1;
+          let referral_increment = 0;
+          if(membershipStatus === "new member"){
+              referral_increment = 1;
+          }else if(membershipStatus === "veteran member"){
+              referral_increment = 0.2;
+          }
+          invited_users.includes(invitedId) ? new_referral_count = referral_count: new_referral_count = referral_count + referral_increment;
 
           try {
-              // Update the document with the new my_polls array
+              // Update the document with the new may_polls array
               await updateDoc(doc(db, "user", `${refererId}`), { invitedUsers: new_invited_users, referralCount: new_referral_count });
               console.log('Document successfully updated for new invitation.');
               return {status:"success"}
@@ -139,9 +148,6 @@ async function preparePost() {
               return {status:"fail"};
           }
       }
-
-
-
   }
 
   async  function userAuth(user_data){
@@ -217,7 +223,6 @@ async function getSubscriberIds(tag){
 
 
 async function getSubscriptions(userId){
-    console.log(userId)
     try {
         const documentRef = await doc(db, "user", `${userId}`);
         const documentSnapshot = await getDoc(documentRef);
@@ -233,7 +238,25 @@ async function getSubscriptions(userId){
         return [];
     }
 }
-
+async function getCreditsData(userId){
+    let credits_data = {};
+    try {
+        const documentRef = await doc(db, "user", `${userId}`);
+        const documentSnapshot = await getDoc(documentRef);
+        if (documentSnapshot.exists()) {
+            //delete from all polls
+            credits_data.postCount = documentSnapshot.data().postCount;
+            credits_data.referralCount = documentSnapshot.data().referralCount;
+            return {status:"success", credits_data};
+        } else {
+            console.log("Document not found");
+            return {status:"fail", credits_data};
+        }
+    } catch (error) {
+        console.error("Error getting document:", error);
+        return {status:"fail", credits_data};
+    }
+}
 async function manageSub(userId, tag){
     console.log(userId, tag)
 
@@ -269,10 +292,8 @@ async function manageSub(userId, tag){
                 console.error('Error updating document:', error);
             }
         }
-        //🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆🎆😁👎✅✅✅
     }else{
         if(userSubs.length >= 3){
-            console.log("Only 3 allowed")
             return { status: "fail", message: "only 3 subs allowed max"}
         }else{
             // subscribe
@@ -305,18 +326,12 @@ async function manageSub(userId, tag){
                 console.error("Tag document not found");
                 return {status: "fail", message: "error locating tag data"}
             }
-
-
-
-
         }
 
     }
-
-
 }
 
-module.exports ={storePoll,verifyPoll,denyPoll,preparePost,userAuth,updateUserPolls, updateReferalCount, getUserPolls, getSubscriberIds, getSubscriptions, manageSub}
+module.exports ={storePoll,verifyPoll,denyPoll,preparePost,userAuth,updateUserPolls, updateReferalCount, getUserPolls, getSubscriberIds, getSubscriptions, getCreditsData,manageSub}
 
 
 
