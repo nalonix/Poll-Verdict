@@ -7,14 +7,33 @@ const {
 
 const setTimer = require("./utilityFunctions/setTimer")
 //utils
-const { userAuth,verifyPoll, denyPoll, getUserPolls, getSubscriptions, manageSub, updateReferalCount} = require('./firebase/firebaseUtils.js')
+// const { userAuth,verifyPoll, denyPoll, getUserPolls, getSubscriptions, manageSub, updateReferalCount} = require('./firebase/firebaseUtils.js')
 //
 const myPollsPagination = require("./UI Controls/myPollsPagination.js")
 // Create an instance of the `Bot` class and pass your bot token to it.
 const bot = new Bot("6539896023:AAHFtPcxBgu8Gi2MADeI51HXqNeetvVh6p0"); // <-- put your bot token between the ""
 
+
+// 🟦🟦🟦🟦 Prisma
+const {authentication, createUser, createUserWithInvite} = require('./prisma/index.ts')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //Settings
-const {adminID} = require("./botSettings");
+const {adminID, channelID} = require("./botSettings");
 
 let scenarioId = 0;
 let runningFlag = false;
@@ -35,18 +54,23 @@ const myAccountCallback  = require("./callbacks/myAccountCallback");
 const menuCallback = require("./callbacks/menuCallback");
 const generateReferalLink = require("./callbacks/getReferalLinkCallback")
 const genericCallback = require("./callbacks/genericCallback")
+const startOpsCallback = require("./callbacks/startOpsCallback")
 
 
 //commands
 const aboutCommand = require("./commands/aboutCommand")
 const faqCommand = require("./commands/faqCommand")
 const rulesCommand = require("./commands/rulesCommand")
-const treeshakingCommand = require("./commands/admin/treeshakingCommand")
+
+const treeShakingCommand = require("./commands/admin/treeshakingCommand")
+const calcCreditCommand = require("./commands/admin/calcCreditCommand")
+const topEarnersCommand = require("./commands/admin/topEarnersCommand")
+const updateUsersCommand = require("./commands/admin/updateUserDataCommand")
 
 
 // Error handler
 bot.catch((err, ctx) => {
-  // console.error('Error occurred:', err);
+  console.error('Error occurred:', err);
 
 });
 
@@ -65,47 +89,62 @@ const buildSubscriptionsKeyboard = require("./keyboards/subscriptionsKeyboard")
 bot.command("start", async(ctx) => {
   // TODO: divide to different function
   await ctx.replyWithChatAction("typing");
-  //console.log(ctx?.match)
   if(!ctx.match){
-    //normal condition
-    if(!runningFlag && ctx.chat.id === adminID){
-      await setTimer(ctx);
-      runningFlag = true;
-      await ctx.reply("Timer set! ⌚");
+    try{
+      let authResponse = await authentication(ctx.chat.id.toString());
+      if(authResponse.status === "member")
+        await ctx.reply(`Welcome back ${authResponse.user_name}`)
+      else if(authResponse.status === "not member"){
+        let new_user = await createUser(ctx.chat.username, ctx.chat.id.toString(), ctx.chat.first_name, ctx.chat.last_name)
+        await ctx.reply(`Hello ${new_user.first_name}, welcome to Poll Verdict`)}
+    }catch(e){
+      console.error(e)
+      await ctx.reply("Error authenticating user: Try again /start")      
     }
-    await userAuth(ctx.chat);
-    await ctx.reply(`Hello ${ctx.chat.first_name}, Welcome to <b>What To Do</b> Bot!`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
-  }else{
+  } else {
     const argument = ctx.match;
     if(argument.toLowerCase().startsWith("ref")){
-      const authResponse = await userAuth(ctx.chat);
-      const refererId = parseInt(argument.slice(3))/4;
-      if(authResponse.status === "new member" && refererId.toString() !== ctx.chat.id.toString()){
-        try{
-          const updateResponse = await updateReferalCount(refererId, ctx.chat.id, "new member");
-          updateResponse.status === "success" && await ctx.api.sendMessage(refererId, `User <b>${ctx.chat.first_name}</b> joined through referral link!`,{parse_mode:"HTML"});
-          await ctx.reply(`Hello ${ctx.chat.first_name}, Welcome to <b>What To Do</b> Bot!`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
-        }catch (e) {
-          console.log(e);
-          await ctx.reply("Referer not found!")
-        }
-      }else if(authResponse.status === "veteran member" && refererId.toString() !== ctx.chat.id.toString() ){
-        try{
-          const updateResponse = await updateReferalCount(refererId, ctx.chat.id, "veteran member");
-          updateResponse.status === "success" && await ctx.api.sendMessage(refererId, `User <b>${ctx.chat.first_name}</b> joined through referral link!`,{parse_mode:"HTML"});
-          await ctx.reply(`Hello ${ctx.chat.first_name}, Welcome to <b>What To Do</b> Bot!`,{parse_mode:"HTML",reply_markup: {inline_keyboard: [ [{text:"Create Poll", callback_data:"createpoll"}], [{text:"My account", callback_data: "account"} ]]}});
-        }catch (e) {
-          console.log(e);
-          await ctx.reply("Referer not found!")
-        }
+      try {
+        const authResponse = await authentication(ctx.chat.id.toString())
+        const refererId = parseInt(argument.slice(3))/4;
+      if(authResponse.status === "not member" && refererId.toString() !== ctx.chat.id.toString()){
+          const new_user = await createUserWithInvite(ctx.chat.username, ctx.chat.id.toString(), ctx.chat.first_name, ctx.chat.last_name, refererId.toString())
+          new_user.status === "success" && await ctx.api.sendMessage(refererId, `User <b>${ctx.chat.first_name}</b> joined through referral link!`,{parse_mode:"HTML"});
+          await ctx.reply(`Hello ${ctx.chat.first_name}, Welcome to <b>Poll Verdict</b> Bot!`,{
+            parse_mode:"HTML",
+            reply_markup: {
+              inline_keyboard: [ 
+                [{text:"Create Poll", callback_data:"createpoll"}], 
+                [{text:"My account", callback_data: "account"} ]
+              ]
+            }
+          });
+      }else if(authResponse.status === "member" && refererId.toString() !== ctx.chat.id.toString() ){
+          await ctx.api.sendMessage(refererId, `User <b>${ctx.chat.first_name}</b> was already registered!`,{parse_mode:"HTML"});
+          await ctx.reply(`Hello ${ctx.chat.first_name}, Welcome to back to <b>Poll Verdict</b> Bot!`,
+            {
+              parse_mode:"HTML",
+              reply_markup: 
+                {
+                  inline_keyboard: 
+                    [ 
+                      [{text:"Create Poll", callback_data:"createpoll"}], 
+                    [{text:"My account", callback_data: "account"} ]
+                  ]
+                }
+            });
       }else{
-        await ctx.reply("Welcome back! 🎉")
+          await ctx.reply("Welcome back! 🎉")
       }
-
+      } catch (error) {
+        console.log(error);
+        await ctx.reply("An error has occured")
+      }
     }
   }
-})
+});
 
+bot.command("startoperation", async (ctx) => startOpsCallback(ctx))
 bot.command("menu",async (ctx)=> menuCallback(ctx))
 
 bot.callbackQuery("menu",async (ctx)=>{
@@ -210,7 +249,19 @@ bot.command("contact", async (ctx)=>{
   }
 })
 
-bot.command("treeshake", treeshakingCommand)
+
+// admin commands
+bot.command("treeshake", treeShakingCommand)
+bot.command("calccredit", calcCreditCommand)
+bot.command("topearners", topEarnersCommand)
+bot.command("updateusers", updateUsersCommand)
+
+
+bot.command("test", async (ctx)=>{
+  const milko = await ctx.api.getChatAdministrators(channelID);
+  console.log(milko)
+})
+
 //verification
 bot.on("callback_query:data", async (ctx) => {
       await genericCallback(ctx);

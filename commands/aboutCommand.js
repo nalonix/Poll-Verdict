@@ -1,6 +1,6 @@
 async function aboutCommand(ctx){
     try{
-        await ctx.reply("Use this bot to post polls on WhatToDo Channel. You can create single and chanied polls with or " +
+        await ctx.reply("Use this bot to post polls on Poll Verdict Channel. You can create single and chanied polls with or " +
             "without leading scenario." +
             "If you want to create polls that will be exposed to a large audience this is your place. " +
             "You can also forward the polls to different groups and users to get all the count." +

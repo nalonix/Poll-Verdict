@@ -1,12 +1,13 @@
 //firebase
-const {app, db} = require('./firebase.js')
+// const {app, db} = require('./firebase.js')
 
 //firebase functions 
-const {collection,query, doc ,getDoc, getDocs,addDoc, setDoc, updateDoc, deleteDoc, orderBy, limit} = require("firebase/firestore");
+// const {collection,query, doc ,getDoc, getDocs,addDoc, setDoc, updateDoc, deleteDoc, orderBy, limit} = require("firebase/firestore");
+const {channelID} = require("../botSettings");
 
-const test_all_polls_ref = collection(db, 'test_all_polls');
-const test_queue_ref = collection(db, 'test_queue');
-const user_ref = collection(db, 'user');
+// const test_all_polls_ref = collection(db, 'test_all_polls');
+// const test_queue_ref = collection(db, 'test_queue');
+// const user_ref = collection(db, 'user');
 
 async function storePoll(aPoll){   
     try {
@@ -60,11 +61,6 @@ async function storePoll(aPoll){
     }
   }
 
-
-
-
-
-
 async function preparePost() {
     try {
         const to_post = [];
@@ -88,6 +84,30 @@ async function preparePost() {
     }
 }
 
+// queue -- 
+// poll archive -- when 
+// created polls -- created poll goes here & forwarded to admin 
+//  
+
+// user creates poll 
+//  -- forward to admin 
+//  -- store in polls 
+// admin verfies poll
+//  -- it's ID will be added to queue 
+//  -- 
+// admin denies poll
+//  -- it will be added to poll archive
+
+// what if you have a single polls table
+// a queue table: which will be list of ids from polls table
+// poll archive: list of ids from polls table + more ids
+// 
+
+
+
+// -- 
+
+
   async function updateUserPolls(message_id, poll_name, creator_id){
     //search user's document by id
       // update the polls field
@@ -97,7 +117,6 @@ async function preparePost() {
       if (documentSnapshot.exists()) {
           const my_polls = documentSnapshot.data().my_polls;
           const post_count = documentSnapshot.data().postCount;
-          console.log("Post count: "+post_count);
 
           //cut string if more than 22 chx
           if(poll_name.length > 25)
@@ -105,7 +124,6 @@ async function preparePost() {
           // Add a new element to the my_polls array
           let new_poll = [...my_polls, {quest: poll_name,message_id}];
           let new_post_count = post_count + 1;
-          console.log("new post count: "+new_post_count);
           try {
               // Update the document with the new my_polls array
               await updateDoc(doc(db, "user", `${creator_id}`), { my_polls: new_poll, postCount: new_post_count });
@@ -128,14 +146,14 @@ async function preparePost() {
 
           // Add a new element to the my_polls array
           let new_invited_users;
-          invited_users.includes(invitedId) ? new_invited_users = new_invited_users = invited_users :  [...invited_users, invitedId];
+          invited_users.includes(invitedId) ? new_invited_users = invited_users : new_invited_users = [...invited_users, invitedId];
+
           let new_referral_count;
           let referral_increment = 0;
           if(membershipStatus === "new member"){
               referral_increment = 1;
-          }else if(membershipStatus === "veteran member"){
-              referral_increment = 0.2;
           }
+          // no reward for veteran invite
           invited_users.includes(invitedId) ? new_referral_count = referral_count: new_referral_count = referral_count + referral_increment;
 
           try {
@@ -186,6 +204,7 @@ async function preparePost() {
 
       return {status: "veteran member",user_name};
   }
+
 async function getUserPolls(userId){
     try {
         const documentRef = await doc(db, "user", `${userId}`);
@@ -221,7 +240,6 @@ async function getSubscriberIds(tag){
     }
 }
 
-
 async function getSubscriptions(userId){
     try {
         const documentRef = await doc(db, "user", `${userId}`);
@@ -238,6 +256,9 @@ async function getSubscriptions(userId){
         return [];
     }
 }
+
+
+
 async function getCreditsData(userId){
     let credits_data = {};
     try {
@@ -247,6 +268,8 @@ async function getCreditsData(userId){
             //delete from all polls
             credits_data.postCount = documentSnapshot.data().postCount;
             credits_data.referralCount = documentSnapshot.data().referralCount;
+            credits_data.invitedUsers = documentSnapshot.data().invitedUsers.length;
+
             return {status:"success", credits_data};
         } else {
             console.log("Document not found");
@@ -257,8 +280,8 @@ async function getCreditsData(userId){
         return {status:"fail", credits_data};
     }
 }
+
 async function manageSub(userId, tag){
-    console.log(userId, tag)
 
     let userSubs = await getSubscriptions(userId);
     if(userSubs.includes(tag)){
@@ -330,6 +353,8 @@ async function manageSub(userId, tag){
 
     }
 }
+
+
 
 module.exports ={storePoll,verifyPoll,denyPoll,preparePost,userAuth,updateUserPolls, updateReferalCount, getUserPolls, getSubscriberIds, getSubscriptions, getCreditsData,manageSub}
 

@@ -6,17 +6,21 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon index.js",
-    "start":"node index.js"
+    "start": "ts-node index.js"
   },
   "author": "doniverse",
   "license": "ISC",
   "dependencies": {
     "@grammyjs/conversations": "^1.1.2",
-    "firebase": "^10.0.0",
+    "@prisma/client": "5.7.1",
     "grammy": "^1.17.2",
     "moment": "^2.29.4"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
+    "@types/node": "^20.10.5",
+    "nodemon": "^3.0.1",
+    "prisma": "5.7.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }

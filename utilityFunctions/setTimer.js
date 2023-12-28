@@ -27,6 +27,7 @@ async function setTimer(ctx){
                     poll_name = poll.quest.slice(0,20)+'...'
                 else
                     poll_name = poll.quest
+                // TODO: update notification link
                 notification += `<a href="https://t.me/pixel_verse/${pollMessage.message_id}">${poll_name}</a>\n`;
             }
 
@@ -54,6 +55,7 @@ async function setTimer(ctx){
             }
 
         }
+        // TODO: update notification time
     }, 1000*60); //6000*60*2
 }
 
