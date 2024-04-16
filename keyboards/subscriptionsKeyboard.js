@@ -1,8 +1,10 @@
-const {getSubscriptions} = require("../firebase/firebaseUtils");
+
+const { fetchUserSubscriptions} = require("../prisma/index.ts");
+const {TAGS} = require("../constants/CONSTANTS.js")
+
 
 async function buildSubscriptionsKeyboard(ctx){
-    let subscriptions = await getSubscriptions(ctx.chat.id);
-    const tags = ["WhatToDo", "Life", "WouldYouRather" ,"Relationships", "Hypothetical", "Explicit", "Career", "Code","Other"];
+    let subscriptions =  await fetchUserSubscriptions(ctx.chat.id.toString());
 
     const rows = [];
 
@@ -13,10 +15,10 @@ async function buildSubscriptionsKeyboard(ctx){
         }));
     };
 
-    rows.push(addRow(tags.slice(0, 2)));
-    rows.push(addRow(tags.slice(2, 4)));
-    rows.push(addRow(tags.slice(4, 6)));
-    rows.push(addRow(tags.slice(6, 8)));
+    rows.push(addRow(TAGS.slice(0, 2)));
+    rows.push(addRow(TAGS.slice(2, 4)));
+    rows.push(addRow(TAGS.slice(4, 6)));
+    rows.push(addRow(TAGS.slice(6, 8)));
     rows.push([{ text: subscriptions.includes("Other") ? `Other ✅` : "Other", callback_data: "managesub,Other" }]);
     rows.push([{text:"Main Menu", callback_data:"menu"}]);
     return rows;

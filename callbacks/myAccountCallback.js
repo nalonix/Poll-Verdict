@@ -1,21 +1,18 @@
 
 
+const { fetchUserStats} = require("../prisma/index.ts")
 
-const {getCreditsData} = require("../firebase/firebaseUtils");
 async function myAccountCallback(ctx){
     if(ctx.callbackQuery)
         ctx.deleteMessage();
-
-    const creditsData = await getCreditsData(ctx.chat.id);
+    const creditsData = await fetchUserStats(ctx.chat.id.toString());
     if(creditsData.status === "success"){
-
-        const { credits_data: { postCount, referralCount, invitedUsers}} = creditsData;
-        console.log(creditsData)
+        const { user_stats: { post_count, referral_count, invited_users}} = creditsData;
 
         await ctx.reply( `Settings - ${ctx.chat.first_name} \n
-         👥  Invited Users: ${invitedUsers} 
-         ⁉  Total Posted: ${postCount}
-         💳  Credits: ${parseFloat(((referralCount*1)+(postCount*0.3)).toFixed(1))}
+         👥  Invited Users: ${invited_users} 
+         ⁉  Total Posted: ${post_count}
+         💳  Credits: ${parseFloat(((referral_count*1)+(post_count*0.3)).toFixed(1))}
          `,{
             reply_markup: {
                 inline_keyboard: [
@@ -30,7 +27,6 @@ async function myAccountCallback(ctx){
                         {text:"Back", callback_data:"menu"},
                     ]
                 ],
-
             }
         })
     }else{

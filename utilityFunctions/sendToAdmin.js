@@ -1,10 +1,10 @@
 const {InlineKeyboard} = require("grammy");
 const {adminID} = require("../botSettings");
 
-async function sendToAdmin(pollTemplate,docId,ctx) {
+async function sendToAdmin(pollTemplate,pollId,ctx) {
     let adminVerifyKeyboard = new InlineKeyboard()
-        .text("Verify",`adminverify,${docId}`)
-        .text("Cancel",`admindeny,${docId}`);
+        .text("Verify",`adminverify,${pollId}`)
+        .text("Cancel",`admindeny,${pollId}`);
 
     //send to user
     // pollTemplate.poll_data.forEach((ele, i)=>{
@@ -34,4 +34,4 @@ async function sendToAdmin(pollTemplate,docId,ctx) {
 
 }
 
-module.exports = sendToAdmin
+module.exports = sendToAdmin;

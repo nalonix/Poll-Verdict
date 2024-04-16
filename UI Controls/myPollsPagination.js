@@ -7,7 +7,7 @@ async function myPollsPagination(ctx) {
     const itemsToShow = myPolls.slice(startIdx, endIdx);
 
     let myPollsKeyboard = itemsToShow.map(ele=>{
-        return [{text:ele.quest, url: `https://t.me/pixel_verse/${ele.message_id}`}]
+        return [{text:ele.poll_title, url: `https://t.me/pixel_verse/${ele.message_id}`}]
     })
     let navigationKeyboard = [];
     if (currentPage > 0) {

@@ -1,12 +1,14 @@
 const moment = require("moment/moment");
 const {Keyboard} = require("grammy");
-const {storePoll} = require("../firebase/firebaseUtils");
+// const {storePoll} = require("../firebase/firebaseUtils");
+// import the create poll function 
+const {createPollRecord} = require("../prisma/index.ts");
 const sendToAdmin = require("../utilityFunctions/sendToAdmin")
 
 async function createPoll(conversation, ctx){
     let pollTemplate ={
-        creator_id: ctx.chat.id,
-        tag:"",
+        creator_id: ctx.chat.id.toString(),
+        tagId: 9,
         created_at: moment().format('YYYY-MM-DD HH:mm'),
         hasContext: false,
         context: {
@@ -27,6 +29,8 @@ async function createPoll(conversation, ctx){
 
     await ctx.reply("Pick preference: ",{reply_markup: keyboard});
     let type = await conversation.waitFor(":text");
+
+    
 
     while(type.msg.text !== "Add Context" && type.msg.text !== "No Context" && type.msg.text !== "Cancel"){
         await ctx.reply("Only choose from the given options.\nPick preference: ",{reply_markup: keyboard});
@@ -240,8 +244,7 @@ async function createPoll(conversation, ctx){
                     [{text:"Life"},{text:"Relationships"}],
                     [{text:"Hypothetical"},{text:"Explicit"}],
                     [{text:"Career"},{text:"Code"}],
-                    [{text:"Other"}, {text: "Skip"}],
-                    [{text: "Cancel"}]
+                    [{text:"Other"}]
                 ],
                 resize_keyboard: true
             }
@@ -251,17 +254,15 @@ async function createPoll(conversation, ctx){
         const validTags = ["WhatToDo", "Life", "WouldYouRather" ,"Relationships", "Hypothetical", "Explicit", "Career", "Code","Other"];
         do {
             tag = await conversation.waitFor(":text");
-            if(tag.msg.text === "Cancel") {
-                await ctx.reply("Poll creation canceled! /menu")
-                return;
-            } else if (tag.msg.text === "Skip") {
-                break;
-            } else if (validTags.includes(tag.msg.text)) {
-                pollTemplate.tag = tag.msg.text;
+            if (validTags.includes(tag.msg.text)) {
+                pollTemplate.tagId = validTags.indexOf(tag.msg.text)+1;
             } else {
                 await ctx.reply("Invalid tag. Please choose from the available options.");
             }
-        } while (!pollTemplate.tag);
+        } while (!validTags.includes(tag.msg.text));
+
+        
+
 
         /*
 
@@ -310,9 +311,18 @@ async function createPoll(conversation, ctx){
 
         let loadingMessage = await ctx.reply("Loading...",{reply_markup:{remove_keyboard:true}})
         //if(verification.msg.text === "Continue"){
-            const docId = await storePoll(pollTemplate);
-            console.log("This is the user 🌞🌞!");
-            await sendToAdmin(pollTemplate,docId,ctx);
+            // make changes here ⚠️
+            // TODO: generate poll titile from content
+            // const docId = await storePoll(pollTemplate);
+            const newPoll = await createPollRecord(
+                "poll title", 
+                pollTemplate.hasContext, 
+                pollTemplate.context, 
+                pollTemplate.creator_id, 
+                pollTemplate.tagId, 
+                pollTemplate.poll_data 
+            );
+            await sendToAdmin(pollTemplate,newPoll.poll_id,ctx);
             try {
                 await ctx.api.deleteMessage(ctx.chat.id, loadingMessage.message_id);
             } catch (e) {

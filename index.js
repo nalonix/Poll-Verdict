@@ -8,26 +8,21 @@ const {
 const setTimer = require("./utilityFunctions/setTimer")
 //utils
 // const { userAuth,verifyPoll, denyPoll, getUserPolls, getSubscriptions, manageSub, updateReferalCount} = require('./firebase/firebaseUtils.js')
-//
+const { fetchUserPolls } = require("./prisma/index.ts")
+
 const myPollsPagination = require("./UI Controls/myPollsPagination.js")
 // Create an instance of the `Bot` class and pass your bot token to it.
-const bot = new Bot("6539896023:AAHFtPcxBgu8Gi2MADeI51HXqNeetvVh6p0"); // <-- put your bot token between the ""
+const bot = new Bot("6650564096:AAEmHT8ikxObpR8AzgJ-joez3JLzB0AxV1Y"); // <-- put your bot token between the ""
 
 
 // 🟦🟦🟦🟦 Prisma
-const {authentication, createUser, createUserWithInvite} = require('./prisma/index.ts')
-
-
-
-
-
-
-
-
-
-
-
-
+const {
+  authentication, 
+  createUser, 
+  createUserWithInvite,
+  
+  createPollRecord
+} = require('./prisma/index.ts')
 
 
 
@@ -71,7 +66,6 @@ const updateUsersCommand = require("./commands/admin/updateUserDataCommand")
 // Error handler
 bot.catch((err, ctx) => {
   console.error('Error occurred:', err);
-
 });
 
 
@@ -152,8 +146,9 @@ bot.callbackQuery("menu",async (ctx)=>{
     await ctx.deleteMessage();
   }catch (e) {
     console.log(e);
+  }finally{
+    await menuCallback(ctx);
   }
-  await menuCallback(ctx);
 })
 
 bot.callbackQuery("createpoll",async ctx=>{
@@ -161,8 +156,9 @@ bot.callbackQuery("createpoll",async ctx=>{
     await ctx.deleteMessage();
   }catch (e) {
     console.log(e);
+  }finally{
+    await ctx.conversation.enter("createPoll");
   }
-  await ctx.conversation.enter("createPoll");
 });
 // handle poll
 bot.command("createpoll", async (ctx) => {
@@ -184,7 +180,9 @@ bot.callbackQuery('mypolls',async ctx=>{
   }catch (e) {
     console.log(e)
   }
-  let all_my_polls = await getUserPolls(ctx.chat.id);
+
+  // new callback for this?
+  let all_my_polls = await fetchUserPolls(ctx.chat.id.toString());
   ctx.session.myPolls = all_my_polls;
   ctx.session.currentPage =0;
   await myPollsPagination(ctx);
@@ -198,7 +196,7 @@ bot.callbackQuery("mysubscriptions", async (ctx)=>{
   try{
     await ctx.deleteMessage();
   }catch (e) {
-    console.log(e)
+    console .log(e)
   }
   const subscriptionsKeyboard = await buildSubscriptionsKeyboard(ctx);
   await ctx.reply(`${ctx.chat.first_name} subscriptions: `,{
@@ -257,10 +255,34 @@ bot.command("topearners", topEarnersCommand)
 bot.command("updateusers", updateUsersCommand)
 
 
+
+
+
+
+
+bot.command("sendmepoll", async  ctx=>{
+  await ctx.api.sendPoll(ctx.chat.id, "who",["i", "am", "impressed"]);
+});
+
+
+bot.on('poll_answer', async (ctx) => {
+  console.log("🪸🪸🪸🪸",ctx) 
+
+  // if (ctx.pollAnswer.option_ids.indexOf(correctAnswerId) > -1 )  {
+  //     await bot.api.sendMessage(ctx.pollAnswer.user.id, "You're a genius!");
+  // }
+  // else {
+  //     await bot.api.sendMessage(ctx.pollAnswer.user.id, "Almost correct!");
+  // }
+});
+
 bot.command("test", async (ctx)=>{
   const milko = await ctx.api.getChatAdministrators(channelID);
   console.log(milko)
 })
+
+
+
 
 //verification
 bot.on("callback_query:data", async (ctx) => {
