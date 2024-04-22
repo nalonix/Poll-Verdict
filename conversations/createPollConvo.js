@@ -3,7 +3,8 @@ const {Keyboard} = require("grammy");
 // const {storePoll} = require("../firebase/firebaseUtils");
 // import the create poll function 
 const {createPollRecord} = require("../prisma/index.ts");
-const sendToAdmin = require("../utilityFunctions/sendToAdmin")
+const sendToAdmin = require("../utilityFunctions/sendToAdmin");
+const { TAGS } = require("../constants/CONSTANTS.js");
 
 async function createPoll(conversation, ctx){
     let pollTemplate ={
@@ -251,15 +252,14 @@ async function createPoll(conversation, ctx){
         });
 
         let tag;
-        const validTags = ["Hypothetical", "Life", "Relationships", "WhatToDo",  "WouldYouRather", "Explicit", "Career", "Code","Other"];
         do {
             tag = await conversation.waitFor(":text");
-            if (validTags.includes(tag.msg.text)) {
-                pollTemplate.tagId = validTags.indexOf(tag.msg.text)+1;
+            if (TAGS.includes(tag.msg.text)) {
+                pollTemplate.tagId = TAGS.indexOf(tag.msg.text)+1;
             } else {
                 await ctx.reply("Invalid tag. Please choose from the available options.");
             }
-        } while (!validTags.includes(tag.msg.text));
+        } while (!TAGS.includes(tag.msg.text));
 
         
 
@@ -315,7 +315,7 @@ async function createPoll(conversation, ctx){
             // TODO: generate poll titile from content
             // const docId = await storePoll(pollTemplate);
             const newPoll = await createPollRecord(
-                "poll title", 
+                pollTemplate.poll_data[0].quest.substring(0, 15), 
                 pollTemplate.hasContext, 
                 pollTemplate.context, 
                 pollTemplate.creator_id, 

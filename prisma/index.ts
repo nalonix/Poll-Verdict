@@ -218,17 +218,34 @@ async function denyPoll(pollId: string) {
   }
 }
 
-async function publishPoll(pollId: string) {
+async function publishPoll(pollId: string, messageId: number) {
+  // also update user post_count - count of the number of polls the user has posted
     try {
       await prisma.poll.update({
-        where:{
+        where: {
           poll_id: pollId
         },
-        data:{
-          status: {connect: {status_id: 2}}
-          // cant locate creator id 
-        },
+        data: {
+          status: {
+            connect: {
+              status_id: 2
+            }
+          },
+          message_id: messageId,
+          author: {
+            update: {
+              stats: {
+                update: {
+                  post_count: {
+                    increment: 1
+                  }
+                }
+              }
+            }
+          }
+        }
       });
+      
       return {status: 'success', poll_id: pollId};
     } catch (error) {
       console.error('Error making update: AcceptPollUpdate');

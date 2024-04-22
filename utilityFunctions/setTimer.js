@@ -31,7 +31,7 @@ async function setTimer(ctx){
                 //await updateUserPolls(pollMessage.message_id, poll.quest, post.creator_id);
                 //cut string if more than 22 chx
                 // publish poll
-                await publishPoll(post.poll_id)
+                await publishPoll(post.poll_id, pollMessage.message_id)
                 // remove from queue
                 await deQueuePoll(post.poll_id)
                 if(poll.quest.length > 20)

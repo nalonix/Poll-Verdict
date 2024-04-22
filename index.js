@@ -244,7 +244,7 @@ bot.command("rules", rulesCommand)
 
 bot.command("contact", async (ctx)=>{
   try{
-    await ctx.reply("Contact: @donidev");
+    await ctx.reply("Contact: @doninx");
   }catch (e) {
     throw new Error(e);
   }

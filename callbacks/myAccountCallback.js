@@ -1,6 +1,6 @@
 
 
-const { fetchUserStats} = require("../prisma/index.ts")
+const { fetchUserStats } = require("../prisma/index.ts")
 
 async function myAccountCallback(ctx){
     if(ctx.callbackQuery)

@@ -1,6 +1,4 @@
-const TAGS = ["WhatToDo", "Life", "WouldYouRather" ,"Relationships", "Hypothetical", "Explicit", "Career", "Code","Other"]
-
-
+const TAGS = ["Hypothetical", "Life", "Relationships", "WhatToDo",  "WouldYouRather", "Explicit", "Career", "Code","Other"]
 
 module.exports = {
     TAGS

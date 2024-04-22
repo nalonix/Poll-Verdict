@@ -43,9 +43,9 @@ async function genericCallback(ctx){
     }else if(arr[0].trim() === 'managesub'){
         let messageId = ctx.update.callback_query.message.message_id;
         let response;
-        console.log(TAGS.indexOf(arr[1]));
         try {
-            response = await manageSubscription(ctx.chat.id.toString(), 1);
+            console.log(ctx.chat.id.toString(), TAGS.indexOf(arr[1]))
+            response = await manageSubscription(ctx.chat.id.toString(), TAGS.indexOf(arr[1]));
         } catch (error) {
             console.log(error);
             return;

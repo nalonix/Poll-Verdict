@@ -1,3 +1,5 @@
+const { channelID } = require("../botSettings");
+
 async function generateReferalLink(ctx){
     try{
         await ctx.deleteMessage();
@@ -6,7 +8,7 @@ async function generateReferalLink(ctx){
     }
     await ctx.reply(`
     Join my link to join WhatToDo Channel answer fun and interesting polls
-    https://t.me/donidev_bot?start=ref${ctx.chat.id*4}`,)
+    https://t.me/${channelID.substring(1)}?start=ref${ctx.chat.id*4}`,)
     await ctx.reply('Forward the above post to friends and groups.', {
         reply_markup: {
             inline_keyboard:[

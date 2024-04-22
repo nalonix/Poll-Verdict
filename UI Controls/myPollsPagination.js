@@ -1,3 +1,5 @@
+const { channelID } = require("../botSettings");
+
 async function myPollsPagination(ctx) {
     await ctx.replyWithChatAction("typing");
     const { currentPage,  myPolls} = ctx.session;
@@ -7,7 +9,7 @@ async function myPollsPagination(ctx) {
     const itemsToShow = myPolls.slice(startIdx, endIdx);
 
     let myPollsKeyboard = itemsToShow.map(ele=>{
-        return [{text:ele.poll_title, url: `https://t.me/pixel_verse/${ele.message_id}`}]
+        return [{text:ele.poll_title, url: `https://t.me/${channelID.substring(1)}/${ele.message_id}`}]
     })
     let navigationKeyboard = [];
     if (currentPage > 0) {
