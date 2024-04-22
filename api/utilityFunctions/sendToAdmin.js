@@ -1,5 +1,5 @@
 const {InlineKeyboard} = require("grammy");
-const {adminID} = require("../../botSettings");
+const {adminID} = require("../botSettings");
 
 async function sendToAdmin(pollTemplate,pollId,ctx) {
     let adminVerifyKeyboard = new InlineKeyboard()

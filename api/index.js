@@ -1,4 +1,9 @@
-const { Bot, session} = require("grammy");
+const { Bot, session, webhookCallback} = require("grammy");
+
+
+
+
+
 const {
     conversations,
     createConversation,
@@ -313,6 +318,6 @@ bot.on("message", async (ctx) => {
 });
 
 
-
+export default webhookCallback(bot, "std/http");
 // Start the bot.
 bot.start();

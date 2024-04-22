@@ -1,7 +1,7 @@
 // const {preparePost, updateUserPolls, getSubscriberIds} = require("../firebase/firebaseUtils");
 
 const {preparePost, getSubscriberIds, publishPoll, deQueuePoll} = require('../prisma/index')
-const {channelID} = require("../../botSettings");
+const {channelID} = require("../botSettings");
 
 async function setTimer(ctx){
     let toPost;
