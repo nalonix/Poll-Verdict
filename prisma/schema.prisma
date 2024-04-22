@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  tg_user_id    String    @id
+  username      String?
+  first_name    String?
+  last_name     String?
+  Date_Of_Birth DateTime?
+  phone_number  String?   @unique
+  join_date     DateTime  @default(now())
+
+  subscriptions Subscriptions[]
+
+  my_polls Poll[]
+
+  stats Stats?
+  bank  Bank?
+
+  invited_by User?   @relation("inviter_invitee", fields: [inviter_id], references: [tg_user_id])
+  inviter_id String?
+  my_invites User[]  @relation("inviter_invitee")
+}
+
+model Bank {
+  bank_id            String    @id @default(uuid())
+  total_cash_history Decimal
+  deposit            Decimal
+  tg_user_id         String    @unique
+  User               User      @relation(fields: [tg_user_id], references: [tg_user_id])
+  payouts            Payouts[]
+}
+
+model Payouts {
+  payout String   @id @default(uuid())
+  time   DateTime @default(now())
+  amount Decimal
+
+  Bank    Bank?   @relation(fields: [bank_id], references: [bank_id])
+  bank_id String?
+}
+
+model Stats {
+  stat_id          String  @id @default(uuid())
+  engagement_count Int
+  referral_count   Int
+  credits          Decimal
+  post_count       Int
+  User             User    @relation(fields: [tg_user_id], references: [tg_user_id])
+  tg_user_id       String  @unique
+}
+
+model Subscriptions {
+  tag_id      Int    @id @default(autoincrement())
+  tag_name    String @unique
+  subscribers User[]
+  Poll        Poll[]
+}
+
+model PollStatus {
+  status_id   Int    @id @default(autoincrement())
+  status_name String // published, denied, pending - waiting for verification
+  polls       Poll[]
+}
+
+model Poll {
+  poll_id    String        @id @default(uuid())
+  poll_title String?
+  hasContext Boolean
+  context    String?
+  created_at DateTime      @default(now())
+  posted_at  DateTime?
+  author     User          @relation(fields: [author_id], references: [tg_user_id])
+  author_id  String
+  tag        Subscriptions @relation(fields: [tag_id], references: [tag_id])
+  tag_id     Int
+  poll_data  String
+  status     PollStatus    @relation(fields: [status_id], references: [status_id])
+  status_id  Int           @default(1)
+  message_id Int?
+  queue      Queue?
+}
+
+model Queue {
+  queue_id String @id @default(uuid())
+
+  poll    Poll   @relation(fields: [poll_id], references: [poll_id])
+  poll_id String @unique
+}
