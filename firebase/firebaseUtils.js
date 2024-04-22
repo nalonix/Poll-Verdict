@@ -61,10 +61,12 @@ async function storePoll(aPoll){
     }
   }
 
+  // updateUserPolls
+
 async function preparePost() {
     try {
         const to_post = [];
-        // Query the collection, order by the created_at field in ascending order, and limit to 2 documents
+        // Query the collection, order by the created_at field in ascending order, and limit to 3 documents
         const q = query(test_queue_ref, orderBy("created_at"), limit(3));
         const querySnapshot = await getDocs(q);
 
@@ -83,6 +85,8 @@ async function preparePost() {
         throw error;
     }
 }
+
+
 
 // queue -- 
 // poll archive -- when 

@@ -185,6 +185,21 @@ async function queuePoll(pollId: string) {
   }
 }
 
+async function deQueuePoll(pollId: string) {
+  try {
+    const deletedQueueItems = await prisma.queue.deleteMany({
+      where: {
+        poll_id: pollId
+      }
+    });
+    console.log("Deleted queue items:", deletedQueueItems);
+    return deletedQueueItems;
+  } catch (error) {
+    console.error('Error deleting from queue:', error);
+    throw error;
+  }
+}
+
 async function denyPoll(pollId: string) {
   try {
     const deniedPoll = await prisma.poll.update({
@@ -200,6 +215,49 @@ async function denyPoll(pollId: string) {
   } catch (error) {
     console.error('Error creating poll:', error);
     throw error;
+  }
+}
+
+async function publishPoll(pollId: string) {
+    try {
+      await prisma.poll.update({
+        where:{
+          poll_id: pollId
+        },
+        data:{
+          status: {connect: {status_id: 2}}
+          // cant locate creator id 
+        },
+      });
+      return {status: 'success', poll_id: pollId};
+    } catch (error) {
+      console.error('Error making update: AcceptPollUpdate');
+      throw error;
+    }
+}
+
+async function preparePost() {
+  try {
+      const fetchedPolls = await prisma.queue.findMany({
+          take: 3, // Limit the result to 3 polls
+          orderBy: {
+              poll: {
+                  created_at: 'desc' // Order by created_at in ascending order
+              }
+          },
+          include: {
+              poll: {
+                include:{
+                  tag: true
+                }
+              } // Include the associated poll data
+          }
+      });
+      console.log("✨✨",fetchedPolls)
+      return fetchedPolls;
+  } catch (error) {
+      console.error('Error fetching polls:', error);
+      throw error;
   }
 }
 
@@ -258,6 +316,30 @@ async function fetchUserPolls(tg_user_id: string){
   } 
  }
 
+//  async function updateUserPolls(message_id: string, poll_name: string, creator_id: string){
+  
+
+//  }
+
+ async function getSubscriberIds(tagId: string){
+  try {
+    const subscriberIds = await prisma.subscriptions.findMany({
+      where:{
+         tag_id: tagId,
+      },
+     select: {
+      subscribers: {
+        tg_user_id: true
+      },
+     },
+    });
+    console.log(subscriberIds[0].subscribers)
+    return subscriberIds[0].subscribers;
+ } catch (error) {
+    console.log('Error fetching subscriber ids: getSubscriberIds()')
+    return [];
+ } 
+}
  
 async function fetchUserSubscriptions(tgUserId: string){
 
@@ -343,11 +425,15 @@ async function fetchUserSubscriptions(tgUserId: string){
     createUser,
     createUserWithInvite,
     authentication,
+    getSubscriberIds,
 
     createPollRecord,
     fetchPoll,
     queuePoll,
+    deQueuePoll,
     denyPoll,
+    publishPoll,
+    preparePost,
 
     fetchUserStats,
     fetchUserPolls,

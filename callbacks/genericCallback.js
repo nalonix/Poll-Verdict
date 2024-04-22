@@ -1,7 +1,5 @@
 const {adminID} = require("../botSettings");
-const {verifyPoll, manageSub} = require("../firebase/firebaseUtils");
-const {manageSubscription} = require("");
-const {queuePoll, denyPoll} = require("../prisma/index.ts")
+const {queuePoll, denyPoll, manageSubscription} = require("../prisma/index.ts")
 const buildSubscriptionsKeyboard = require("../keyboards/subscriptionsKeyboard");
 
 const {TAGS } = require("../constants/CONSTANTS");

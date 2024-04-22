@@ -251,7 +251,7 @@ async function createPoll(conversation, ctx){
         });
 
         let tag;
-        const validTags = ["WhatToDo", "Life", "WouldYouRather" ,"Relationships", "Hypothetical", "Explicit", "Career", "Code","Other"];
+        const validTags = ["Hypothetical", "Life", "Relationships", "WhatToDo",  "WouldYouRather", "Explicit", "Career", "Code","Other"];
         do {
             tag = await conversation.waitFor(":text");
             if (validTags.includes(tag.msg.text)) {

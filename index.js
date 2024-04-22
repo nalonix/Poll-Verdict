@@ -4,10 +4,7 @@ const {
     createConversation,
   } = require("@grammyjs/conversations");
 
-
-const setTimer = require("./utilityFunctions/setTimer")
 //utils
-// const { userAuth,verifyPoll, denyPoll, getUserPolls, getSubscriptions, manageSub, updateReferalCount} = require('./firebase/firebaseUtils.js')
 const { fetchUserPolls } = require("./prisma/index.ts")
 
 const myPollsPagination = require("./UI Controls/myPollsPagination.js")
@@ -20,12 +17,11 @@ const {
   authentication, 
   createUser, 
   createUserWithInvite,
-  
   createPollRecord
 } = require('./prisma/index.ts')
 
 
-
+const setTimer = require("./utilityFunctions/setTimer.js")
 
 //Settings
 const {adminID, channelID} = require("./botSettings");
@@ -74,7 +70,6 @@ const createPoll = require("./conversations/createPollConvo")
 bot.use(createConversation(createPoll));
 // middleware to check if member of channel
 const checkMembership = require("./middlewares/checkMembership")
-const {getSubscriberIds} = require("./firebase/firebaseUtils");
 bot.use(checkMembership);
 //Keyboards ⌨️
 const buildSubscriptionsKeyboard = require("./keyboards/subscriptionsKeyboard")
@@ -138,7 +133,15 @@ bot.command("start", async(ctx) => {
   }
 });
 
-bot.command("startoperation", async (ctx) => startOpsCallback(ctx))
+bot.command("startoperation", async (ctx) => {
+  if(!runningFlag && ctx.chat.id === adminID){
+    await setTimer(ctx);
+    runningFlag = true;
+    await ctx.reply("Timer set! ⌚");
+  }else{
+    await ctx.reply("No auth or Already running!")
+  }
+})
 bot.command("menu",async (ctx)=> menuCallback(ctx))
 
 bot.callbackQuery("menu",async (ctx)=>{
@@ -235,7 +238,7 @@ bot.callbackQuery('return', async (ctx) => {
 
 bot.command("about",aboutCommand)
 
-bot.command("FAQ", faqCommand)
+bot.command("faq", faqCommand)
 
 bot.command("rules", rulesCommand)
 
