@@ -1,5 +1,5 @@
 // the middleware in middleware directory
-const {channelID} =  require("../botSettings");
+const {channelID} =  require("../../botSettings");
 
 async function checkMembership(ctx,next){
     const chat = await ctx.api.getChatMember(channelID,ctx.chat.id);

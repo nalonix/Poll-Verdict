@@ -3,7 +3,7 @@
 
 //firebase functions 
 // const {collection,query, doc ,getDoc, getDocs,addDoc, setDoc, updateDoc, deleteDoc, orderBy, limit} = require("firebase/firestore");
-const {channelID} = require("../botSettings");
+const {channelID} = require("../../botSettings");
 
 // const test_all_polls_ref = collection(db, 'test_all_polls');
 // const test_queue_ref = collection(db, 'test_queue');

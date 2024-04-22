@@ -1,4 +1,4 @@
-const { channelID } = require("../botSettings");
+const { channelID } = require("../../botSettings");
 
 async function myPollsPagination(ctx) {
     await ctx.replyWithChatAction("typing");
