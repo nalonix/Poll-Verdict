@@ -4,7 +4,7 @@ async function faqCommand(ctx){
 <b>2. Do the earners change?</b>\nYes, the earners will constantly change to the users who has invited and posted the most. 
 <b>3. Can you lose credits?</b>\nYes, when a user you have invited leaves the channel you will lose 0.3 credit scores.
 <b>4. How often do we earn?</b>\nYou will get a percentage cut from the total earning of the channel twice a year. 
-For any inquires contact @doninx
+For any inquires contact @nalonix
 `, {parse_mode: 'HTML'})
         }catch (e) {
             throw new Error(e);
