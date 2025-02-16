@@ -244,7 +244,7 @@ bot.command("rules", rulesCommand)
 
 bot.command("contact", async (ctx)=>{
   try{
-    await ctx.reply("Contact: @doninx");
+    await ctx.reply("Contact: @nalonix");
   }catch (e) {
     throw new Error(e);
   }
@@ -263,26 +263,26 @@ bot.command("updateusers", updateUsersCommand)
 
 
 
-bot.command("sendmepoll", async  ctx=>{
-  await ctx.api.sendPoll(ctx.chat.id, "who",["i", "am", "impressed"]);
-});
+// bot.command("sendmepoll", async  ctx=>{
+//   await ctx.api.sendPoll(ctx.chat.id, "who",["i", "am", "impressed"]);
+// });
 
 
-bot.on('poll_answer', async (ctx) => {
-  console.log("🪸🪸🪸🪸",ctx) 
+// bot.on('poll_answer', async (ctx) => {
+//   console.log("🪸🪸🪸🪸",ctx) 
 
-  // if (ctx.pollAnswer.option_ids.indexOf(correctAnswerId) > -1 )  {
-  //     await bot.api.sendMessage(ctx.pollAnswer.user.id, "You're a genius!");
-  // }
-  // else {
-  //     await bot.api.sendMessage(ctx.pollAnswer.user.id, "Almost correct!");
-  // }
-});
+//   // if (ctx.pollAnswer.option_ids.indexOf(correctAnswerId) > -1 )  {
+//   //     await bot.api.sendMessage(ctx.pollAnswer.user.id, "You're a genius!");
+//   // }
+//   // else {
+//   //     await bot.api.sendMessage(ctx.pollAnswer.user.id, "Almost correct!");
+//   // }
+// });
 
-bot.command("test", async (ctx)=>{
-  const milko = await ctx.api.getChatAdministrators(channelID);
-  console.log(milko)
-})
+// bot.command("test", async (ctx)=>{
+//   const milko = await ctx.api.getChatAdministrators(channelID);
+//   console.log(milko)
+// })
 
 
 
@@ -300,15 +300,15 @@ bot.on("message", async (ctx) => {
     throw new Error(e);
   }
   // Check if the message is a reply to your poll message
-  if (ctx.message.reply_to_message && ctx.message.reply_to_message.poll) {
-    // const pollId = ctx.message.reply_to_message.poll.id;
-    // const userId = ctx.from.id;
-    console.log("⛔⛔⛔🤒");
+  // if (ctx.message.reply_to_message && ctx.message.reply_to_message.poll) {
+  //   // const pollId = ctx.message.reply_to_message.poll.id;
+  //   // const userId = ctx.from.id;
+  //   console.log("⛔⛔⛔🤒");
 
-    // Store the user ID and poll ID to track who replied to which poll
-    // You can use a database or an in-memory data structure for this purpose
-    // For example: pollReplies[pollId].push(userId);
-  }
+  //   // Store the user ID and poll ID to track who replied to which poll
+  //   // You can use a database or an in-memory data structure for this purpose
+  //   // For example: pollReplies[pollId].push(userId);
+  // }
 
 });
 

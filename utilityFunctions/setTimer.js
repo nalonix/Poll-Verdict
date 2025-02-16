@@ -8,7 +8,7 @@ async function setTimer(ctx){
     const nums = ["1️⃣", "2️⃣","3️⃣","4️⃣","5️⃣","6️⃣","7️⃣","8️⃣"];
     setInterval(async ()=>{
         toPost = await preparePost();
-        console.log("👉👉👉",toPost)
+        // console.log("👉👉👉",toPost)
         for(let post of toPost){
             // TODO: json.parse(post) everything up here 
 
